@@ -41,9 +41,12 @@ struct ExtensionStoreClient: Sendable {
         return try ExtensionStoreResponse.parseDetail(try await get(url))
     }
 
-    /// Capped: one README is read for its first screens, and the whole body stays in memory.
+    /// Capped in characters: a README is read for its first screens and held in memory.
     func readme(url: URL) async throws -> String {
-        String(decoding: try await get(url).prefix(Self.readmeLimit), as: UTF8.self)
+        guard let text = String(data: try await get(url), encoding: .utf8) else {
+            throw ExtensionStoreError.malformedResponse
+        }
+        return String(text.prefix(Self.readmeLimit))
     }
 
     private static let readmeLimit = 256 * 1024
