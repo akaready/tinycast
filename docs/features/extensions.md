@@ -744,6 +744,11 @@ Its presence lets bundled `safe-buffer` select the modern Buffer API rather than
 as a legacy function. `EventEmitter.once` passes the emitter as the listener's receiver, like `on`,
 and removes the listener before invoking it; bundled duplex streams rely on that receiver at `end`.
 
+`new Buffer(string, encoding)` decodes like `Buffer.from`. Without its own constructor `Uint8Array`
+read the string as a length, so `thirty-two`, the base32 decoder inside otplib, turned every TOTP
+secret into an empty key and Proton Authenticator showed one code for all accounts. `createHmac` with
+an empty key stays an HMAC rather than becoming a plain hash.
+
 **WebAssembly** — `compile`, `instantiate` and their streaming forms run through the synchronous
 `Module` and `Instance` constructors. JavaScriptCore settles the promise forms from a run-loop timer on
 the thread that owns the VM, and the runtime's queue never spins one, so they stayed pending forever.

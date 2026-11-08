@@ -1859,6 +1859,44 @@ struct ExtensionTests {
                   emitter.emit("ordinary", 2);
                   assert.equal(JSON.stringify(ordinary), "[[true,1],[true,2]]");
                 """
+            ),
+            (
+                "legacy-buffer-totp",
+                """
+                  const { Buffer } = require("buffer");
+                  const crypto = require("crypto");
+                  assert.equal(new Buffer("héllo").toString(), "héllo");
+                  assert.equal(new Buffer("6869", "hex").toString(), "hi");
+                  assert.equal(new Buffer("aGVsbG8=", "base64").toString(), "hello");
+                  assert(Buffer.isBuffer(new Buffer("x")));
+                  assert.equal(new Buffer(3).length, 3);
+                  const alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZ234567";
+                  const base32 = (text) => {
+                    const input = new Buffer(text), output = new Buffer(Math.ceil((input.length * 5) / 8));
+                    let bits = 0, value = 0, length = 0;
+                    for (const byte of input) {
+                      value = (value << 5) | alphabet.indexOf(String.fromCharCode(byte));
+                      bits += 5;
+                      if (bits >= 8) { output[length++] = (value >>> (bits - 8)) & 0xff; bits -= 8; }
+                    }
+                    return output.slice(0, length);
+                  };
+                  const hotp = (secret, counter) => {
+                    const key = Buffer.from(base32(secret).toString("hex"), "hex");
+                    const message = Buffer.from(counter.toString(16).padStart(16, "0"), "hex");
+                    const digest = crypto.createHmac("sha1", key).update(message).digest();
+                    const at = digest[19] & 0xf;
+                    const code = ((digest[at] & 0x7f) << 24) | (digest[at + 1] << 16) | (digest[at + 2] << 8) | digest[at + 3];
+                    return String(code % 1e6).padStart(6, "0");
+                  };
+                  assert.equal(base32("GEZDGNBVGY3TQOJQGEZDGNBVGY3TQOJQ").toString(), "12345678901234567890");
+                  assert.equal(hotp("GEZDGNBVGY3TQOJQGEZDGNBVGY3TQOJQ", 0), "755224");
+                  assert.equal(hotp("GEZDGNBVGY3TQOJQGEZDGNBVGY3TQOJQ", 1), "287082");
+                  assert.equal(hotp("JBSWY3DPEHPK3PXP", 0), "282760");
+                  assert.equal(
+                    crypto.createHmac("sha256", "").update("").digest("hex"),
+                    "b613679a0814d9ec772f95d778c35fc5ff1697c493715653c6c712144292c5ad");
+                """
             )
         ] {
             let (runtime, host, recorder) = makeRuntime()

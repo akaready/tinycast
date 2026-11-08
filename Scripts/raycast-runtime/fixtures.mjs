@@ -341,6 +341,44 @@ module.exports.default = () => {
 };
 `;
 
+// otplib's base32 decoder (thirty-two) builds both of its buffers with the legacy constructor.
+const legacyBufferSource = `
+const { Buffer } = require("buffer");
+const crypto = require("crypto");
+
+const alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZ234567";
+function base32(text) {
+  const input = new Buffer(text), output = new Buffer(Math.ceil((input.length * 5) / 8));
+  let bits = 0, value = 0, length = 0;
+  for (const byte of input) {
+    value = (value << 5) | alphabet.indexOf(String.fromCharCode(byte));
+    bits += 5;
+    if (bits >= 8) { output[length++] = (value >>> (bits - 8)) & 0xff; bits -= 8; }
+  }
+  return output.slice(0, length);
+}
+
+function hotp(secret, counter) {
+  const key = Buffer.from(base32(secret).toString("hex"), "hex");
+  const message = Buffer.from(counter.toString(16).padStart(16, "0"), "hex");
+  const digest = crypto.createHmac("sha1", key).update(message).digest();
+  const at = digest[19] & 0xf;
+  const code = ((digest[at] & 0x7f) << 24) | (digest[at + 1] << 16) | (digest[at + 2] << 8) | digest[at + 3];
+  return String(code % 1e6).padStart(6, "0");
+}
+
+module.exports.default = () => {
+  const rfc4226 = "GEZDGNBVGY3TQOJQGEZDGNBVGY3TQOJQ";
+  globalThis.__legacyBuffer = {
+    strings: [new Buffer("héllo").toString(), new Buffer("6869", "hex").toString(), new Buffer("aGVsbG8=", "base64").toString()],
+    buffer: Buffer.isBuffer(new Buffer("x")) && new Buffer(3).length === 3,
+    key: base32(rfc4226).toString(),
+    codes: [hotp(rfc4226, 0), hotp(rfc4226, 1), hotp("JBSWY3DPEHPK3PXP", 0)],
+    emptyKey: crypto.createHmac("sha256", "").update("").digest("hex"),
+  };
+};
+`;
+
 const onceSource = `
 const { EventEmitter } = require("events");
 
@@ -1034,6 +1072,15 @@ export async function runFixtures() {
     check("slow allocations are zero-filled", JSON.stringify(result?.bytes) === "[0,0,0,0]");
     check("slow allocations do not share backing memory", result?.independent === true);
     check("zero-sized slow allocations remain Buffers", result?.empty === true);
+  });
+
+  await run("Legacy new Buffer(string) feeds otplib's base32 decoder", legacyBufferSource, "no-view", async (harness) => {
+    const result = harness.call("globalThis.__legacyBuffer");
+    check("new Buffer(string, encoding) decodes like Buffer.from", JSON.stringify(result?.strings) === '["héllo","hi","hello"]', JSON.stringify(result?.strings));
+    check("new Buffer(size) still allocates a Buffer", result?.buffer === true);
+    check("a base32 secret decodes to its key", result?.key === "12345678901234567890", JSON.stringify(result?.key));
+    check("each secret gets its own RFC 4226 code", JSON.stringify(result?.codes) === '["755224","287082","282760"]', JSON.stringify(result?.codes));
+    check("an empty HMAC key is still an HMAC", result?.emptyKey === "b613679a0814d9ec772f95d778c35fc5ff1697c493715653c6c712144292c5ad", result?.emptyKey);
   });
 
   await run("EventEmitter.once preserves the emitter receiver", onceSource, "no-view", async (harness) => {

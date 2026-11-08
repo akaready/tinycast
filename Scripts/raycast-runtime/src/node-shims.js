@@ -789,7 +789,7 @@ class Hash {
     return this;
   }
   digest(encoding) {
-    const base64 = hostCallSync("crypto", this._key ? "hmac" : "hash", [
+    const base64 = hostCallSync("crypto", this._key != null ? "hmac" : "hash", [
       this._algorithm,
       bytesToBase64(Buffer.concat(this._chunks)),
       this._key ?? null,

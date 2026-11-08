@@ -162,6 +162,17 @@ function writeUIntBEGeneric(buffer, value, offset, byteLength) {
 }
 
 export class Buffer extends Uint8Array {
+  // Node's legacy `new Buffer(string, encoding)`: Uint8Array alone reads a string as length 0.
+  constructor(value, encoding) {
+    if (typeof value === "string") {
+      const bytes = encode(value, encoding);
+      super(bytes.length);
+      this.set(bytes);
+    } else {
+      super(...arguments);
+    }
+  }
+
   static from(value, encodingOrOffset, length) {
     if (typeof value === "string") return wrap(encode(value, encodingOrOffset));
     if (value instanceof ArrayBuffer) {
