@@ -9,7 +9,7 @@ enum ExtensionStoreScreenshot {
     /// A freshly-decoded, thereafter-immutable `NSImage` is safe to move across the actor boundary.
     private struct Decoded: @unchecked Sendable { let image: NSImage? }
 
-    /// Nil on any failure or on cancel; nothing is cached here, so the view's state is the only copy.
+    /// Nil on failure or cancel; nothing is cached here, so the view's state is the only copy.
     static func load(_ url: URL) async -> NSImage? {
         guard let data = try? await ExtensionStoreClient().download(url), !Task.isCancelled else {
             return nil

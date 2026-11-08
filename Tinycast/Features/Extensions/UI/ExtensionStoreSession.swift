@@ -47,7 +47,7 @@ final class ExtensionStoreSession {
         case updating
     }
 
-    /// A store listing, an installed extension, or both: the Installed filter lists what is on disk.
+    /// A store listing, an installed extension, or both: Installed lists what is on disk.
     struct Entry: Identifiable, Equatable {
         let listing: ExtensionListing?
         let installed: InstalledExtension?
@@ -185,10 +185,10 @@ final class ExtensionStoreSession {
         if next == .all, pagesQuery != query { scheduleReload() }
     }
 
-    /// Called with the highlighted row, so a page loads as the list nears its end and no sooner.
-    func loadNextPageIfNeeded(selectedIndex: Int) {
+    /// Called with the highlighted or an appearing row, so a page loads as the list nears its end.
+    func loadNextPageIfNeeded(nearIndex: Int) {
         guard filter == .all, phase == .loaded, hasMore, !isLoadingMore, !moreFailed,
-            selectedIndex >= listings.count - Self.pageLookahead
+            nearIndex >= listings.count - Self.pageLookahead
         else { return }
         isLoadingMore = true
         let (query, token, page) = (pagesQuery, generation, nextPage)

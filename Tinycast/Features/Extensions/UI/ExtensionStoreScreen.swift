@@ -1,7 +1,7 @@
 import AppKit
 import SwiftUI
 
-/// Browse, search, install, update and uninstall Raycast Store extensions without leaving the palette.
+/// Browse, search, install, update and uninstall Raycast Store extensions in the palette.
 struct ExtensionStoreScreen: PaletteScreen {
     typealias Entry = ExtensionStoreSession.Entry
 

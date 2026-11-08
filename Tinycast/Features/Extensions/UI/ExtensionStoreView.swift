@@ -40,7 +40,7 @@ struct ExtensionStoreView: View {
         }
         .task(id: SelectionKey(id: selected?.id, index: selection, count: rows.count)) {
             session.select(selected)
-            session.loadNextPageIfNeeded(selectedIndex: selection)
+            session.loadNextPageIfNeeded(nearIndex: selection)
         }
     }
 
@@ -98,6 +98,7 @@ struct ExtensionStoreView: View {
                             }
                         )
                         .selectionFrame(index == selection)
+                        .onAppear { session.loadNextPageIfNeeded(nearIndex: index) }
                     }
                     if session.isLoadingMore {
                         ProgressView().controlSize(.small)
