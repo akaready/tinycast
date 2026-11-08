@@ -1,0 +1,86 @@
+{
+ "id": "89648e03-cceb-4205-9f40-75fcb039a4c6",
+ "name": "github",
+ "native_id": null,
+ "platforms": [
+  "macOS",
+  "Windows"
+ ],
+ "author": {
+  "name": "Thomas Lombart",
+  "handle": "thomaslombart",
+  "avatar": "https://files.raycast.com/goncaog0hpye49ez4racdnrwcoaj"
+ },
+ "created_at": 1668614317,
+ "kill_listed_at": 0,
+ "owner": {
+  "name": "Raycast",
+  "handle": "raycast",
+  "avatar": "https://files.raycast.com/xr57mqo1x6k3rpb0j29xn7acgf72"
+ },
+ "status": "active",
+ "is_new": false,
+ "access": "public",
+ "store_url": "https://www.raycast.com/raycast/github",
+ "download_count": 218108,
+ "listed": true,
+ "title": "GitHub",
+ "description": "Work with issues, pull requests, manage workflows, search repositories and stay on top of notifications",
+ "commit_sha": "2e9f6c1754624b6f174c098b5a3914ab384dc18f",
+ "relative_path": "extensions/github/",
+ "api_version": "2.10.0",
+ "categories": [
+  "Developer Tools",
+  "Productivity",
+  "AI Extensions"
+ ],
+ "provides_models": false,
+ "has_mcp": false,
+ "metadata_count": 7,
+ "updated_at": 1793993309,
+ "source_url": "https://github.com/raycast/extensions/tree/2e9f6c1754624b6f174c098b5a3914ab384dc18f/extensions/github/",
+ "readme_url": "https://github.com/raycast/extensions/tree/2e9f6c1754624b6f174c098b5a3914ab384dc18f/extensions/github/README.md",
+ "readme_assets_path": "https://github.com/raycast/extensions/raw/2e9f6c1754624b6f174c098b5a3914ab384dc18f/extensions/github//",
+ "icons": {
+  "light": "https://files.raycast.com/7jwegdqctqa5elimcb2baqa6edfc",
+  "dark": "https://files.raycast.com/glla6cbiizry19x2rbra4kxm9w6u"
+ },
+ "commands": [
+  {
+   "name": "search-repositories",
+   "title": "Search Repositories",
+   "subtitle": "",
+   "description": "Search in your public or private repositories by name.",
+   "mode": "view"
+  },
+  {
+   "name": "my-pull-requests",
+   "title": "My Pull Requests",
+   "subtitle": "",
+   "description": "List pull requests you created, participated in, or were mentioned in.",
+   "mode": "view"
+  }
+ ],
+ "download_url": "https://extensions.raycast-releases.com/l2ah3adqiw61acb8e6jamfee83c5",
+ "metadata": [
+  "https://files.raycast.com/cnv3ehurvw7w8awqkigjfmkolr7c",
+  "https://files.raycast.com/i6ga1scihxrlfvbc7w7p86kie9mb",
+  "https://files.raycast.com/0a5i2ftvqldmtofcp3tsvawcqcj1"
+ ],
+ "changelog": {
+  "versions": [
+   {
+    "title": "Windows Action Shortcuts",
+    "title_link": null,
+    "date": "2026-11-06",
+    "markdown": "- Support Windows shortcuts for actions, submenus, and toast actions, and align macOS bindings with Raycast's standard action shortcuts where they match."
+   },
+   {
+    "title": "Update",
+    "title_link": null,
+    "date": "2026-11-06",
+    "markdown": "- Add **Create Repository** command (disabled by default) to create a repository on your account or in one of your organizations.\n- AI: Add a **Create Repository** tool, which always asks for confirmation before creating the repository."
+   }
+  ]
+ }
+}

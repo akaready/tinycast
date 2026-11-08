@@ -11,6 +11,8 @@ struct ExtensionStoreTests {
         gitHubSourceParsing()
         gitHubURLs()
         storeResponse()
+        storePaging()
+        storeDetail()
         gitHubTree()
         packageManagers()
         abbreviation()
@@ -172,6 +174,102 @@ struct ExtensionStoreTests {
         check(
             "a de-listed lookup offers nothing",
             (try? ExtensionStoreResponse.parseEntry(Data(delisted.utf8))) == .some(nil))
+    }
+
+    // MARK: - Browsing and a store page
+
+    static func fixture(_ name: String) -> Data {
+        FileManager.default.contents(atPath: "Tests/ext-fixtures/\(name)") ?? Data()
+    }
+
+    static func storePaging() {
+        print("\n# store paging")
+        guard let page = try? ExtensionStoreResponse.parsePage(fixture("store-list-page.json")) else {
+            check("a list page parses", false)
+            return
+        }
+        check("the total is read", page.totalResults == 3_538)
+        check("every entry is listed", page.listings.count == 2 && page.rawCount == 2)
+        guard let first = page.listings.first else { return }
+        check("the first is the most downloaded", first.name == "kill-process")
+        check("categories are read", first.categories == ["AI Extensions"])
+        check("the update time is read", first.updatedAt == Date(timeIntervalSince1970: 1_791_891_445))
+        check(
+            "the page address is read",
+            first.storeURL?.absoluteString == "https://www.raycast.com/rolandleth/kill-process")
+
+        let url = ExtensionStoreResponse.browseURL(page: 3)?.absoluteString ?? ""
+        check("browse addresses the list", url.hasPrefix("https://www.raycast.com/frontend_api/extensions?"))
+        check("browse passes its page", url.contains("page=3"))
+        check("browse asks for macOS", url.contains("platform=macOS"))
+
+        let mixed = """
+            {"total_results":40,"data":[
+              {"id":"a","name":"live","status":"active","download_url":"https://example.com/a.zip"},
+              {"id":"b","name":"gone","status":"kill_listed","download_url":"https://example.com/b.zip"},
+              {"id":"c","name":"empty","status":"active"}]}
+            """
+        let filtered = try? ExtensionStoreResponse.parsePage(Data(mixed.utf8))
+        check("de-listed and download-less entries are dropped", filtered?.listings.map(\.name) == ["live"])
+        // Paging counts what the endpoint sent, or a dropped entry would end the list early.
+        check("but they still count toward the page", filtered?.rawCount == 3)
+        check(
+            "a page without a total still parses",
+            (try? ExtensionStoreResponse.parsePage(Data(#"{"data":[]}"#.utf8)))?.totalResults == nil)
+    }
+
+    static func storeDetail() {
+        print("\n# store detail")
+        guard let detail = try? ExtensionStoreResponse.parseDetail(fixture("store-detail.json")) else {
+            check("a detail record parses", false)
+            return
+        }
+        check("the listing is read", detail.listing.name == "github" && detail.listing.title == "GitHub")
+        check("the screenshots are read", detail.screenshots.count == 3)
+        check(
+            "a screenshot is a URL",
+            detail.screenshots.first?.absoluteString
+                == "https://files.raycast.com/cnv3ehurvw7w8awqkigjfmkolr7c")
+        check("commands carry their descriptions", detail.commands.count == 2)
+        check("a command's title is read", detail.commands.first?.title == "Search Repositories")
+        check(
+            "and its summary",
+            detail.commands.first?.summary == "Search in your public or private repositories by name.")
+        check("the changelog is newest first", detail.changelog.count == 2)
+        check("a release has a title", detail.changelog.first?.title == "Windows Action Shortcuts")
+        check("a release has a day", detail.changelog.first?.date != nil)
+        check("a release has a body", detail.changelog.first?.markdown.hasPrefix("- Support") == true)
+        check(
+            "the README is fetched from the raw host",
+            detail.readmeURL?.absoluteString
+                == "https://raw.githubusercontent.com/raycast/extensions/2e9f6c1754624b6f174c098b5a3914ab384dc18f/extensions/github/README.md"
+        )
+
+        check(
+            "a blob link rewrites too",
+            ExtensionStoreResponse.readmeRawURL("https://github.com/me/repo/blob/main/README.md")?
+                .absoluteString == "https://raw.githubusercontent.com/me/repo/main/README.md")
+        check(
+            "another host has no README",
+            ExtensionStoreResponse.readmeRawURL("https://example.com/me/repo/tree/main/README.md") == nil)
+        check(
+            "a link with no file has no README",
+            ExtensionStoreResponse.readmeRawURL("https://github.com/me/repo") == nil)
+
+        let bare = #"{"id":"a","name":"bare","download_url":"https://example.com/a.zip"}"#
+        let sparse = try? ExtensionStoreResponse.parseDetail(Data(bare.utf8))
+        check(
+            "a sparse record has empty sections",
+            sparse?.screenshots.isEmpty == true && sparse?.commands.isEmpty == true
+                && sparse?.changelog.isEmpty == true && sparse?.readmeURL == nil)
+
+        let delisted = #"{"id":"a","name":"x","status":"kill_listed","download_url":"https://e.com/a.zip"}"#
+        do {
+            let none = try ExtensionStoreResponse.parseDetail(Data(delisted.utf8))
+            check("a de-listed detail offers nothing", none == nil)
+        } catch {
+            check("a de-listed detail parses", false)
+        }
     }
 
     // MARK: - GitHub trees

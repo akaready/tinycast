@@ -14,12 +14,39 @@ struct ExtensionStoreClient: Sendable {
         self.session = session
     }
 
-    func search(_ query: String) async throws -> [ExtensionListing] {
-        guard let url = ExtensionStoreResponse.searchURL(query: query, page: 1) else {
+    func search(_ query: String, page: Int = 1) async throws -> [ExtensionListing] {
+        try await searchPage(query, page: page).listings
+    }
+
+    func searchPage(_ query: String, page: Int) async throws -> ExtensionStorePage {
+        guard let url = ExtensionStoreResponse.searchURL(query: query, page: page) else {
             throw ExtensionStoreError.malformedResponse
         }
-        return try ExtensionStoreResponse.parseStore(try await get(url))
+        return try ExtensionStoreResponse.parsePage(try await get(url))
     }
+
+    /// Most downloaded first; the store ignores a sort.
+    func browse(page: Int) async throws -> ExtensionStorePage {
+        guard let url = ExtensionStoreResponse.browseURL(page: page) else {
+            throw ExtensionStoreError.malformedResponse
+        }
+        return try ExtensionStoreResponse.parsePage(try await get(url))
+    }
+
+    /// Nil when the store has it but can't serve it, such as a de-listed extension.
+    func detail(handle: String, name: String) async throws -> ExtensionStoreDetail? {
+        guard let url = ExtensionStoreResponse.lookupURL(handle: handle, name: name) else {
+            throw ExtensionStoreError.malformedResponse
+        }
+        return try ExtensionStoreResponse.parseDetail(try await get(url))
+    }
+
+    /// Capped: one README is read for its first screens, and the whole body stays in memory.
+    func readme(url: URL) async throws -> String {
+        String(decoding: try await get(url).prefix(Self.readmeLimit), as: UTF8.self)
+    }
+
+    private static let readmeLimit = 256 * 1024
 
     /// Nil when the store has it but can't serve it, such as a de-listed extension.
     func lookup(handle: String, name: String) async throws -> ExtensionListing? {
