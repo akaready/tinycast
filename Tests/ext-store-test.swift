@@ -198,6 +198,8 @@ struct ExtensionStoreTests {
             "the page address is read",
             first.storeURL?.absoluteString == "https://www.raycast.com/rolandleth/kill-process")
 
+        check("the owner's handle comes from the address", first.storeHandle == "rolandleth")
+
         let url = ExtensionStoreResponse.browseURL(page: 3)?.absoluteString ?? ""
         check("browse addresses the list", url.hasPrefix("https://www.raycast.com/frontend_api/extensions?"))
         check("browse passes its page", url.contains("page=3"))
