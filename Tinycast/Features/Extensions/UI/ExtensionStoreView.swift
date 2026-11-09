@@ -74,6 +74,12 @@ struct ExtensionStoreView: View {
         case .updates:
             EmptyResults(
                 text: String(localized: "Everything is up to date"), systemImage: "checkmark.circle")
+        case .raycast:
+            EmptyResults(
+                text: session.raycastAvailable
+                    ? String(localized: "Nothing to Import")
+                    : String(localized: "No Raycast install found in ~/.config."),
+                systemImage: "arrow.down.doc")
         }
     }
 
@@ -83,6 +89,7 @@ struct ExtensionStoreView: View {
         ScrollViewReader { proxy in
             ScrollView {
                 LazyVStack(spacing: 0) {
+                    if session.pendingUpdateCount > 0 { ExtensionStoreUpdatesBanner(session: session) }
                     ForEach(Array(rows.enumerated()), id: \.element.id) { index, entry in
                         ExtensionStoreRow(
                             entry: entry, state: session.state(for: entry),
@@ -181,6 +188,45 @@ private struct ExtensionStoreRow: View {
     }
 }
 
+/// Not a row: ↑/↓ never land on it, so ↵ can't update everything by accident.
+private struct ExtensionStoreUpdatesBanner: View {
+    @Environment(\.metrics) private var metrics
+    let session: ExtensionStoreSession
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: metrics.spacing.xs) {
+            HStack(spacing: metrics.spacing.lg) {
+                Image(systemName: "arrow.down.circle")
+                    .foregroundStyle(Theme.Colors.primaryAction)
+                Text("\(session.pendingUpdateCount) updates available")
+                    .font(metrics.typography.rowTrailing)
+                    .lineLimit(1)
+                Spacer(minLength: metrics.spacing.sm)
+                if session.isUpdating {
+                    ProgressView().controlSize(.small)
+                } else {
+                    Button("Update All") { session.updateAll() }
+                        .buttonStyle(.plain)
+                        .font(metrics.typography.bar)
+                        .foregroundStyle(Theme.Colors.primaryAction)
+                }
+            }
+            if let error = session.updateError {
+                Text(error)
+                    .font(metrics.typography.rowTrailing)
+                    .foregroundStyle(.orange)
+            }
+        }
+        .padding(.horizontal, metrics.spacing.md)
+        .padding(.vertical, metrics.spacing.sm)
+        .background(
+            RoundedRectangle(cornerRadius: metrics.radius.row, style: .continuous)
+                .fill(Theme.Colors.cardFill)
+        )
+        .padding(.bottom, metrics.spacing.xs)
+    }
+}
+
 struct ExtensionStoreTag: View {
     @Environment(\.metrics) private var metrics
     let text: String
@@ -206,10 +252,13 @@ struct ExtensionStoreIcon: View {
     let size: CGFloat
 
     private var resolved: ExtensionImage.Resolved {
+        if case .github = entry.kind {
+            return ExtensionImage.Resolved(source: .symbol("hammer"))
+        }
         if let url = entry.listing?.iconURL(isDark: isDark) {
             return ExtensionImage.Resolved(source: .remote(url))
         }
-        if let path = entry.installed?.iconPath {
+        if let path = (entry.installed ?? entry.raycastCopy)?.iconPath {
             return ExtensionImage.Resolved(source: .file(path))
         }
         return ExtensionImage.Resolved(source: .symbol("puzzlepiece.extension"))

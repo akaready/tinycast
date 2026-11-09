@@ -5,13 +5,14 @@ import Observation
 @Observable @MainActor
 final class ExtensionStoreSession {
     enum Filter: CaseIterable {
-        case all, installed, updates
+        case all, installed, updates, raycast
 
         var title: String {
             switch self {
             case .all: return String(localized: "All")
             case .installed: return String(localized: "Installed")
             case .updates: return String(localized: "Updates")
+            case .raycast: return String(localized: "Raycast")
             }
         }
 
@@ -20,6 +21,7 @@ final class ExtensionStoreSession {
             case .all: return "square.grid.2x2"
             case .installed: return "checkmark.circle"
             case .updates: return "arrow.triangle.2.circlepath"
+            case .raycast: return "arrow.down.doc"
             }
         }
     }
@@ -49,20 +51,51 @@ final class ExtensionStoreSession {
 
     /// A store listing, an installed extension, or both: Installed lists what is on disk.
     struct Entry: Identifiable, Equatable {
+        enum Kind: Equatable {
+            case store
+            /// A pseudo-row for a typed GitHub address, ahead of whatever the store found.
+            case github(ExtensionGitHubSource)
+        }
+
         let listing: ExtensionListing?
         let installed: InstalledExtension?
+        /// Raycast's own build of an extension Tinycast doesn't have yet.
+        var raycastCopy: InstalledExtension?
+        var kind = Kind.store
 
-        var id: String { listing?.name ?? installed?.manifest.name ?? "" }
-        var title: String { listing?.title ?? installed?.title ?? id }
-        var author: String { listing?.author ?? installed?.manifest.author ?? "" }
-        var summary: String { listing?.summary ?? installed?.manifest.description ?? "" }
+        private var local: InstalledExtension? { installed ?? raycastCopy }
+
+        var id: String {
+            if case .github(let source) = kind {
+                return "github:\(source.owner)/\(source.repository)/\(source.path)@\(source.ref)"
+            }
+            return listing?.name ?? local?.manifest.name ?? ""
+        }
+
+        var title: String {
+            if case .github = kind { return String(localized: "Install from GitHub") }
+            return listing?.title ?? local?.title ?? id
+        }
+
+        var author: String { listing?.author ?? local?.manifest.author ?? "" }
+
+        var summary: String {
+            if case .github(let source) = kind { return String(localized: "Builds \(source.summary).") }
+            return listing?.summary ?? local?.manifest.description ?? ""
+        }
+
         var downloadCount: Int? { listing?.downloadCount }
-        var handle: String? { listing?.storeHandle ?? installed?.manifest.storeHandle }
+
+        var handle: String? {
+            if case .github = kind { return nil }
+            return listing?.storeHandle ?? local?.manifest.storeHandle
+        }
+
         var key: String { "\(handle ?? "")/\(id)" }
 
         var pageURL: URL? {
-            if let url = listing?.storeURL { return url }
             guard let handle else { return nil }
+            if let url = listing?.storeURL { return url }
             return URL(string: "https://www.raycast.com")?.appending(path: handle).appending(path: id)
         }
     }
@@ -82,6 +115,10 @@ final class ExtensionStoreSession {
     private(set) var readmes: [String: Fetch<String>] = [:]
     private(set) var installing: [String: String] = [:]
     private(set) var failures: [String: String] = [:]
+    private(set) var raycastPending: [InstalledExtension] = []
+    private(set) var raycastAvailable = false
+    private(set) var updateError: String?
+    private(set) var isChecking = false
 
     @ObservationIgnored private let extensions: ExtensionManager
     @ObservationIgnored private let client: ExtensionStoreClient
@@ -97,6 +134,7 @@ final class ExtensionStoreSession {
     @ObservationIgnored private var pageTask: Task<Void, Never>?
     @ObservationIgnored private var detailTask: Task<Void, Never>?
     @ObservationIgnored private var updateTask: Task<Void, Never>?
+    @ObservationIgnored private var raycastTask: Task<Void, Never>?
 
     init(extensions: ExtensionManager, client: ExtensionStoreClient = ExtensionStoreClient()) {
         self.extensions = extensions
@@ -110,6 +148,7 @@ final class ExtensionStoreSession {
         guard !isRunning else { return }
         isRunning = true
         updateTask = Task { [extensions] in await extensions.checkForUpdates() }
+        raycastTask = Task { await refreshRaycast() }
         reload()
     }
 
@@ -117,8 +156,8 @@ final class ExtensionStoreSession {
     func end() {
         isRunning = false
         generation += 1
-        [searchTask, pageTask, detailTask, updateTask].forEach { $0?.cancel() }
-        (searchTask, pageTask, detailTask, updateTask) = (nil, nil, nil, nil)
+        [searchTask, pageTask, detailTask, updateTask, raycastTask].forEach { $0?.cancel() }
+        (searchTask, pageTask, detailTask, updateTask, raycastTask) = (nil, nil, nil, nil, nil)
         query = ""
         filter = .all
         listings = []
@@ -128,6 +167,8 @@ final class ExtensionStoreSession {
         details = [:]
         readmes = [:]
         failures = [:]
+        updateError = nil
+        raycastPending = []
         cacheOrder = []
     }
 
@@ -136,7 +177,7 @@ final class ExtensionStoreSession {
     var entries: [Entry] {
         switch filter {
         case .all:
-            return listings.map { Entry(listing: $0, installed: nil) }
+            return (githubEntry.map { [$0] } ?? []) + listings.map { Entry(listing: $0, installed: nil) }
         case .installed:
             let known = Dictionary(listings.map { ($0.name, $0) }, uniquingKeysWith: { first, _ in first })
                 .merging(extensions.updates) { _, update in update }
@@ -147,7 +188,15 @@ final class ExtensionStoreSession {
             return extensions.updates.values
                 .map { Entry(listing: $0, installed: extensions.extensionNamed($0.name)) }
                 .filter(matchesQuery).sorted(by: Self.byTitle)
+        case .raycast:
+            return raycastPending
+                .map { Entry(listing: nil, installed: nil, raycastCopy: $0) }
+                .filter(matchesQuery).sorted(by: Self.byTitle)
         }
+    }
+
+    private var githubEntry: Entry? {
+        ExtensionGitHubSource(query).map { Entry(listing: nil, installed: nil, kind: .github($0)) }
     }
 
     private static func byTitle(_ lhs: Entry, _ rhs: Entry) -> Bool {
@@ -187,8 +236,9 @@ final class ExtensionStoreSession {
 
     /// Called with the highlighted or an appearing row, so a page loads as the list nears its end.
     func loadNextPageIfNeeded(nearIndex: Int) {
+        let row = nearIndex - (githubEntry == nil ? 0 : 1)
         guard filter == .all, phase == .loaded, hasMore, !isLoadingMore, !moreFailed,
-            nearIndex >= listings.count - Self.pageLookahead
+            row >= listings.count - Self.pageLookahead
         else { return }
         isLoadingMore = true
         let (query, token, page) = (pagesQuery, generation, nextPage)
@@ -365,6 +415,30 @@ final class ExtensionStoreSession {
         }
     }
 
+    var pendingUpdateCount: Int { extensions.updates.count }
+    var isUpdating: Bool { !extensions.updating.isEmpty }
+
+    func updateAll() {
+        let names = extensions.updates.keys.sorted()
+        guard !names.isEmpty, !isUpdating else { return }
+        updateError = nil
+        Task {
+            let failed = await extensions.update(names)
+            if !failed.isEmpty {
+                updateError = String(localized: "Couldn't update \(failed.joined(separator: ", ")).")
+            }
+        }
+    }
+
+    /// The number pending afterwards, for the caller to report.
+    func checkForUpdates() async -> Int {
+        guard !isChecking else { return pendingUpdateCount }
+        isChecking = true
+        defer { isChecking = false }
+        await extensions.checkForUpdates()
+        return pendingUpdateCount
+    }
+
     func update(_ entry: Entry) {
         let id = entry.id
         guard extensions.updates[id] != nil, !extensions.updating.contains(id) else { return }
@@ -372,6 +446,43 @@ final class ExtensionStoreSession {
         Task {
             let failed = await extensions.update([id])
             if !failed.isEmpty { failures[id] = String(localized: "The update didn't install.") }
+        }
+    }
+
+    // MARK: - Raycast
+
+    /// What Raycast has built that Tinycast doesn't have; the scan runs off the main actor.
+    func refreshRaycast() async {
+        raycastAvailable = ExtensionCatalog.raycastExtensionsDirectory() != nil
+        guard raycastAvailable, extensions.isEnabled else {
+            raycastPending = []
+            return
+        }
+        let pending = await extensions.raycastImportCandidates().filter { !$0.isInstalled }
+        guard !Task.isCancelled else { return }
+        raycastPending = pending.map(\.installed)
+    }
+
+    func importAllFromRaycast() {
+        importFromRaycast(raycastPending)
+    }
+
+    func importFromRaycast(_ copies: [InstalledExtension]) {
+        let ids = copies.map(\.manifest.name)
+        guard !copies.isEmpty, ids.allSatisfy({ installing[$0] == nil }) else { return }
+        for id in ids {
+            installing[id] = String(localized: "Importing…")
+            failures[id] = nil
+        }
+        Task {
+            let failed = Set(await extensions.importAllFromRaycast(copies))
+            for copy in copies {
+                installing[copy.manifest.name] = nil
+                if failed.contains(copy.title) {
+                    failures[copy.manifest.name] = String(localized: "Couldn't import \(copy.title).")
+                }
+            }
+            await refreshRaycast()
         }
     }
 }

@@ -31,10 +31,23 @@ struct ExtensionStoreScreen: PaletteScreen {
 
     // MARK: - Primary action
 
+    /// With no row to act on, the pill still checks for updates, so ⌘K never has nothing to open.
+    var actsWithoutRows: Bool { true }
+
+    /// Row 0 may be the GitHub pseudo-row, which builds code, so the highlight lands past it.
+    var landingSelection: Int {
+        guard case .github? = rows.first?.kind, rows.count > 1 else { return 0 }
+        return 1
+    }
+
     var primaryActionTitle: String {
-        guard let entry = entry(at: clampedSelection) else { return String(localized: "Install") }
+        guard let entry = entry(at: clampedSelection) else {
+            return String(localized: "Check for Updates")
+        }
+        if case .github = entry.kind { return String(localized: "Install from GitHub") }
         switch session.state(for: entry) {
-        case .available: return String(localized: "Install")
+        case .available:
+            return entry.raycastCopy == nil ? String(localized: "Install") : String(localized: "Import")
         case .installing: return String(localized: "Installing…")
         case .installed: return String(localized: "Open")
         case .updateAvailable: return String(localized: "Update")
@@ -42,21 +55,27 @@ struct ExtensionStoreScreen: PaletteScreen {
         }
     }
 
-    func hasPrimaryAction(at selection: Int) -> Bool { entry(at: selection) != nil }
+    func hasPrimaryAction(at selection: Int) -> Bool { true }
 
     func isPrimaryActionEnabled(at selection: Int) -> Bool {
-        guard let entry = entry(at: selection) else { return false }
+        guard let entry = entry(at: selection) else { return !session.isChecking }
+        if case .github = entry.kind { return true }
         switch session.state(for: entry) {
-        case .available: return entry.listing != nil
+        case .available: return entry.listing != nil || entry.raycastCopy != nil
         case .installed, .updateAvailable: return true
         case .installing, .updating: return false
         }
     }
 
     func activate(at selection: Int) {
-        guard let entry = entry(at: selection), isPrimaryActionEnabled(at: selection) else { return }
+        guard isPrimaryActionEnabled(at: selection) else { return }
+        guard let entry = entry(at: selection) else { return checkForUpdates() }
+        if case .github(let source) = entry.kind {
+            return core.extensionCoordinator.confirmInstallFromGitHub(source)
+        }
         switch session.state(for: entry) {
-        case .available: session.install(entry)
+        case .available:
+            if let copy = entry.raycastCopy { session.importFromRaycast([copy]) } else { session.install(entry) }
         case .updateAvailable: session.update(entry)
         case .installed: open(entry)
         case .installing, .updating: break
@@ -91,16 +110,39 @@ struct ExtensionStoreScreen: PaletteScreen {
     // MARK: - Actions
 
     func actions(at selection: Int) -> PopoverMenuContent? {
-        guard let entry = entry(at: selection) else { return nil }
+        let entry = entry(at: selection)
+        var items = entry.map(entryItems) ?? []
+        let hasEntryItems = !items.isEmpty
+        let first = items.count
+        items.append(contentsOf: storeItems)
+        if hasEntryItems, items.indices.contains(first) { items[first].startsSection = true }
+        return PopoverMenuContent(header: entry?.title ?? String(localized: "Store"), items: items)
+    }
+
+    private func entryItems(_ entry: Entry) -> [PopoverMenuItem] {
+        if case .github(let source) = entry.kind {
+            return [
+                PopoverMenuItem(
+                    title: String(localized: "Install from GitHub"), systemImage: "hammer", shortcut: "↵"
+                ) { core.extensionCoordinator.confirmInstallFromGitHub(source) }
+            ]
+        }
         let state = session.state(for: entry)
         var items: [PopoverMenuItem] = []
         switch state {
         case .available:
-            items.append(
-                PopoverMenuItem(
-                    title: String(localized: "Install"), systemImage: "arrow.down.circle",
-                    isEnabled: entry.listing != nil, shortcut: "↵"
-                ) { session.install(entry) })
+            if let copy = entry.raycastCopy {
+                items.append(
+                    PopoverMenuItem(
+                        title: String(localized: "Import"), systemImage: "arrow.down.doc", shortcut: "↵"
+                    ) { session.importFromRaycast([copy]) })
+            } else {
+                items.append(
+                    PopoverMenuItem(
+                        title: String(localized: "Install"), systemImage: "arrow.down.circle",
+                        isEnabled: entry.listing != nil, shortcut: "↵"
+                    ) { session.install(entry) })
+            }
         case .installing, .updating:
             items.append(
                 PopoverMenuItem(
@@ -136,7 +178,55 @@ struct ExtensionStoreScreen: PaletteScreen {
                     title: String(localized: "Copy Link"), systemImage: "link", shortcut: "⌃⌘C"
                 ) { copyLink(entry) })
         }
-        return PopoverMenuContent(header: entry.title, items: items)
+        return items
+    }
+
+    /// What Settings → Extensions does for the whole library, for ⌘K on any row or none.
+    private var storeItems: [PopoverMenuItem] {
+        let coordinator = core.extensionCoordinator
+        var items = [
+            PopoverMenuItem(
+                title: String(localized: "Check for Updates"), systemImage: "arrow.clockwise",
+                isEnabled: !session.isChecking
+            ) { checkForUpdates() }
+        ]
+        if session.pendingUpdateCount > 0 {
+            items.append(
+                PopoverMenuItem(
+                    title: String(localized: "Update All"), systemImage: "arrow.down.circle",
+                    isEnabled: !session.isUpdating
+                ) { session.updateAll() })
+        }
+        if !session.raycastPending.isEmpty {
+            items.append(
+                PopoverMenuItem(
+                    title: String(localized: "Import All from Raycast"), systemImage: "arrow.down.doc"
+                ) { session.importAllFromRaycast() })
+        }
+        items.append(
+            PopoverMenuItem(
+                title: String(localized: "Import from Raycast"), systemImage: "arrow.down.doc",
+                isEnabled: session.raycastAvailable
+            ) { session.setFilter(.raycast) })
+        items.append(
+            PopoverMenuItem(
+                title: String(localized: "Add from Folder…"), systemImage: "folder"
+            ) { coordinator.addExtensionsFromFolders() })
+        items.append(
+            PopoverMenuItem(
+                title: String(localized: "Extension Settings…"), systemImage: "gearshape"
+            ) { coordinator.showExtensionSettings() })
+        return items
+    }
+
+    private func checkForUpdates() {
+        Task {
+            let count = await session.checkForUpdates()
+            core.showMessage(
+                count == 0
+                    ? String(localized: "Everything is up to date")
+                    : String(localized: "\(count) updates available"))
+        }
     }
 
     private func openItem(_ entry: Entry, shortcut: String?) -> PopoverMenuItem {

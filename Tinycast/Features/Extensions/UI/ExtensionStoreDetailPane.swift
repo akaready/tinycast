@@ -98,6 +98,20 @@ struct ExtensionStoreDetailPane: View {
 
     @ViewBuilder
     private func sections(_ entry: Entry) -> some View {
+        if case .github = entry.kind {
+            note(
+                String(
+                    localized: """
+                        Installing runs your package manager and the extension's own build script. \
+                        Install only from someone you trust.
+                        """))
+        } else {
+            storeSections
+        }
+    }
+
+    @ViewBuilder
+    private var storeSections: some View {
         switch detail {
         case nil, .loading?:
             ProgressView().controlSize(.small).frame(maxWidth: .infinity)
