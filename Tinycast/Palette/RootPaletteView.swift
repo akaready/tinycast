@@ -1123,6 +1123,7 @@ struct RootPaletteView: View {
         case .fileSearchFilter: toggleFileSearchFilter()
         case .emojiCategory: toggleEmojiCategory()
         case .dictionaryScope: toggleDictionaryScope()
+        case .extensionStoreFilter: toggleExtensionStoreFilter()
         case .aiModel: toggleAIModel()
         case .ignored: return false
         }
@@ -1146,6 +1147,18 @@ struct RootPaletteView: View {
         guard dictionary.hasThesaurus else { return }
         let active = DictionaryScope.allCases.firstIndex(of: dictionary.scope) ?? 0
         open(.dictionaryScope, highlighting: active)
+    }
+
+    /// The header button's menu, opened on the category or filter it already holds.
+    private func toggleExtensionStoreFilter() {
+        let field = ExtensionStoreScreen.filterField
+        if openMenu == .argumentOptions, argumentOptionsField == field {
+            closeMenus()
+            return
+        }
+        guard let store = screen as? ExtensionStoreScreen else { return }
+        argumentOptionsField = field
+        open(.argumentOptions, highlighting: store.filterHighlight)
     }
 
     private func toggleExtensionSearchAccessory() {

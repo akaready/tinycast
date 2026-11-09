@@ -8,6 +8,7 @@ enum PaletteFilterAction: Equatable {
     case fileSearchFilter
     case emojiCategory
     case dictionaryScope
+    case extensionStoreFilter
     case aiModel
     /// No filter on the header, so the key stays with the search field.
     case ignored
@@ -23,6 +24,7 @@ enum PaletteFilterAction: Equatable {
         case .fileSearch: return .fileSearchFilter
         case .emoji: return .emojiCategory
         case .dictionary: return .dictionaryScope
+        case .extensionStore: return .extensionStoreFilter
         case .ai: return .aiModel
         default: return .ignored
         }
