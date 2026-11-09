@@ -23,7 +23,7 @@ the Store gets parity instead of Step 5. Owning the command under Extensions add
 to the Extensions pane, so it can take an alias and shortcut. `ExtensionListing` gained
 `categories`, `updatedAt`, `storeURL` and `storeHandle`. "Open" goes to the extension's Settings page.
 **Left undone:** the user's hands-on pass and visual review; memory peak with screenshots loaded and
-a leak check; ⌘P for the filter; GitHub installs report progress only as a short HUD. Fork-only, for
+a leak check; GitHub installs report progress only as a short HUD. Fork-only, for
 good: upstream closed the same request (#1397) as not planned, and the owner intends to remove
 Raycast extensions once native Tinycast extensions mature, so the user chose not to raise it.
 
