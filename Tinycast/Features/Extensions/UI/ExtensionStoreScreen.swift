@@ -11,7 +11,7 @@ struct ExtensionStoreScreen: PaletteScreen {
     let openActions: () -> Void
     let openArgumentOptions: (String) -> Void
 
-    private static let filterField = "filter"
+    static let filterField = "filter"
     private static let filterWidth: CGFloat = 176
 
     private var metrics: InterfaceMetrics { core.settings.interfaceSize.metrics }
@@ -275,8 +275,19 @@ struct ExtensionStoreScreen: PaletteScreen {
                     title: session.category.map(ExtensionStoreSession.title(ofCategory:))
                         ?? session.filter.title,
                     systemImage: session.category == nil ? session.filter.systemImage : "tag",
-                    isOpen: false, help: String(localized: "Filter extensions"),
+                    isOpen: false, help: String(localized: "Filter extensions  ⌘P"),
                     action: { openArgumentOptions(Self.filterField) })))
+    }
+
+    /// The menu row it opens on: the active category, else the active filter.
+    var filterHighlight: Int {
+        let filters = ExtensionStoreSession.Filter.allCases
+        if let category = session.category,
+            let index = ExtensionStoreResponse.categories.firstIndex(of: category)
+        {
+            return filters.count + index
+        }
+        return filters.firstIndex(of: session.filter) ?? 0
     }
 
     /// The filters, then the store's categories; All is the way back to the whole list.

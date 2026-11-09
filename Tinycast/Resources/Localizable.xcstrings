@@ -57363,54 +57363,54 @@
         }
       }
     },
-    "Filter extensions" : {
+    "Filter extensions  ⌘P" : {
       "localizations" : {
         "de" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Erweiterungen filtern"
+            "value" : "Erweiterungen filtern  ⌘P"
           }
         },
         "es" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Filtrar extensiones"
+            "value" : "Filtrar extensiones  ⌘P"
           }
         },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Filtrer les extensions"
+            "value" : "Filtrer les extensions  ⌘P"
           }
         },
         "ja" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "拡張機能を絞り込む"
+            "value" : "拡張機能を絞り込む  ⌘P"
           }
         },
         "ko" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "확장 프로그램 필터"
+            "value" : "확장 프로그램 필터  ⌘P"
           }
         },
         "pt" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Filtrar extensões"
+            "value" : "Filtrar extensões  ⌘P"
           }
         },
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Фильтр расширений"
+            "value" : "Фильтр расширений  ⌘P"
           }
         },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "筛选扩展"
+            "value" : "筛选扩展  ⌘P"
           }
         }
       }

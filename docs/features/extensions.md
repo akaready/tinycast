@@ -538,7 +538,8 @@ endpoint's `category:"<English name>"` operator inside `q`, combined with any ty
 alone still pages in the store's order. Under All it reloads the list and resets paging; under
 Installed, Updates and Raycast it narrows what is held by the extension's categories, leaving out any
 whose categories are unknown. A category tag on an extension's page picks that category and returns to
-All. Names are localized; the query value is always the English one.
+All. Names are localized; the query value is always the English one. ⌘P toggles the menu, opening on the
+active category or else the active filter (`PaletteFilterAction.extensionStoreFilter`).
 
 **Doing what Settings → Extensions does.** Nobody needs Settings to manage the library:
 
