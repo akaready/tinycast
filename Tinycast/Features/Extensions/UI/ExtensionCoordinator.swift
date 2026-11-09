@@ -10,6 +10,8 @@ final class ExtensionCoordinator {
     private let settings: AppSettings
     /// Message-HUD presentation only — never for state this type owns.
     private unowned let core: AppCore
+    /// Owned here so it outlives the Store screen, which starts and ends it as it comes and goes.
+    let storeSession: ExtensionStoreSession
 
     init(
         extensions: ExtensionManager,
@@ -25,6 +27,7 @@ final class ExtensionCoordinator {
         self.settingsCoordinator = settingsCoordinator
         self.settings = settings
         self.core = core
+        storeSession = ExtensionStoreSession(extensions: extensions)
     }
 
     // MARK: - Feature presence
@@ -32,7 +35,27 @@ final class ExtensionCoordinator {
     /// Applies both switches as they stand — on launch, and after a backup import moves them.
     func applyEnabled() {
         extensions.setShowsInLauncher(settings.extensionsShowInLauncher)
+        applyStoreVisibility()
         Task { await extensions.setEnabled(settings.extensionsEnabled) }
+    }
+
+    private func applyStoreVisibility() {
+        core.appIndex.setCommandsVisible([.store], settings.extensionsEnabled)
+    }
+
+    /// The pane that keeps what the Store leaves alone: the toolchain, leftovers, the on switch.
+    func showExtensionSettings() {
+        paletteCoordinator.hidePalette(restoreFocus: false)
+        settingsCoordinator.showSettings(tab: .extensions)
+    }
+
+    func showStore() {
+        guard settings.extensionsEnabled else {
+            core.showMessage(
+                String(localized: "Extensions are disabled — enable them in Settings"), tone: .danger)
+            return
+        }
+        paletteCoordinator.togglePalette(mode: .extensionStore)
     }
 
     /// Also consent to run third-party JavaScript, so it asks before it starts.
@@ -40,6 +63,7 @@ final class ExtensionCoordinator {
         guard enabled != settings.extensionsEnabled else { return }
         guard enabled else {
             settings.extensionsEnabled = false
+            applyStoreVisibility()
             Task { await extensions.setEnabled(false) }
             return
         }
@@ -60,6 +84,7 @@ final class ExtensionCoordinator {
             else { return }
 
             settings.extensionsEnabled = true
+            applyStoreVisibility()
             await extensions.setEnabled(true)
         }
     }
@@ -146,6 +171,66 @@ final class ExtensionCoordinator {
                     symbol: "trash", confirmTitle: String(localized: "Uninstall"))
             else { return }
             await extensions.uninstall(owner)
+        }
+    }
+
+    /// Runs the extension's own build script, so it asks first; the palette hides for the dialog.
+    func confirmInstallFromGitHub(_ source: ExtensionGitHubSource) {
+        paletteCoordinator.hidePalette(restoreFocus: false)
+        NSApp.activate(ignoringOtherApps: true)
+        Task {
+            guard
+                await core.confirm(
+                    title: String(localized: "Build \(source.summary)?"),
+                    message: String(
+                        localized: """
+                            Installing runs your package manager and the extension's own build script. \
+                            Install only from someone you trust.
+                            """),
+                    symbol: "hammer", confirmTitle: String(localized: "Install"), tone: .neutral,
+                    confirmRole: .standard)
+            else { return }
+            core.showMessage(String(localized: "Building…"), tone: .neutral)
+            do {
+                let installed = try await extensions.install(
+                    source, packageManager: settings.extensionPackageManager,
+                    additionalSearchPaths: settings.extensionCustomSearchPaths, onProgress: { _ in })
+                core.showMessage(String(localized: "Installed \(installed.title)."))
+            } catch {
+                await core.showNotice(
+                    title: String(localized: "Couldn't install from GitHub"),
+                    message: error.localizedDescription, symbol: "hammer", tone: .danger)
+            }
+        }
+    }
+
+    /// A folder of built commands; the open panel needs the app active, so the palette steps aside.
+    func addExtensionsFromFolders() {
+        paletteCoordinator.hidePalette(restoreFocus: false)
+        NSApp.activate(ignoringOtherApps: true)
+        Task {
+            let panel = NSOpenPanel()
+            panel.canChooseDirectories = true
+            panel.canChooseFiles = false
+            panel.allowsMultipleSelection = true
+            panel.prompt = String(localized: "Add")
+            guard panel.runModal() == .OK else { return }
+            var added = 0
+            var problems: [String] = []
+            for url in panel.urls {
+                do {
+                    try await extensions.install(from: url)
+                    added += 1
+                } catch {
+                    problems.append(error.localizedDescription)
+                }
+            }
+            if added > 0 { core.showMessage(String(localized: "Added \(added) extensions.")) }
+            if !problems.isEmpty {
+                await core.showNotice(
+                    title: String(localized: "Couldn't add the folder"),
+                    message: problems.joined(separator: "\n"), symbol: "folder", tone: .danger)
+            }
         }
     }
 

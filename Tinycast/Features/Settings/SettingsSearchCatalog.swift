@@ -614,6 +614,9 @@ enum SettingsSearchCatalog {
             .extensionsExtensions, "Enable extensions",
             keywords: ["raycast", "third party", "javascript"]),
         .init(
+            group: .extensionsCommands, "Store command",
+            keywords: ["store", "browse", "shortcut", "alias", "launcher"]),
+        .init(
             .extensionsInstall, "Search extensions",
             keywords: ["store", "browse", "install"]),
         .init(

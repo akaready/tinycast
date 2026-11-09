@@ -257,6 +257,8 @@ final class LauncherCoordinator {
         case .importFromRaycast:
             dismissPalette()
             settingsCoordinator.showBackupSettings()
+        case .store:
+            core.extensionCoordinator.showStore()
         case .checkForUpdates:
             dismissPalette()
             core.updateCoordinator.checkForUpdates()

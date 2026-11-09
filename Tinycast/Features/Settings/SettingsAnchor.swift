@@ -111,6 +111,7 @@ extension SettingsAnchor {
     static let calendarCalendars = Self(tab: .calendar, title: "Calendars")
 
     static let extensionsExtensions = Self(tab: .extensions, title: "Extensions")
+    static let extensionsCommands = Self(tab: .extensions, title: "Commands")
     static let extensionsCompatibility = Self(tab: .extensions, title: "Compatibility")
     static let extensionsInstalled = Self(
         tab: .extensions,

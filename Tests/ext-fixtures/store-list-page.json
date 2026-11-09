@@ -1,0 +1,125 @@
+{
+ "data": [
+  {
+   "id": "c0c9423a-7014-481e-8bb9-44c4c6df53be",
+   "name": "kill-process",
+   "native_id": null,
+   "platforms": [
+    "macOS",
+    "Windows"
+   ],
+   "author": {
+    "name": "Roland Leth",
+    "handle": "rolandleth",
+    "avatar": "https://files.raycast.com/ggm68kkfzdyw6g8d6cv3sq4zn64f"
+   },
+   "created_at": 1635151605,
+   "kill_listed_at": 0,
+   "owner": {
+    "name": "Roland Leth",
+    "handle": "rolandleth",
+    "avatar": "https://files.raycast.com/ggm68kkfzdyw6g8d6cv3sq4zn64f"
+   },
+   "status": "active",
+   "is_new": false,
+   "access": "public",
+   "store_url": "https://www.raycast.com/rolandleth/kill-process",
+   "download_count": 801558,
+   "title": "Kill Process",
+   "description": "Terminate processes sorted by CPU or memory usage",
+   "commit_sha": "645cb29302e41f7730b0e68d84777feb0ad096a9",
+   "relative_path": "extensions/kill-process/",
+   "api_version": "1.104.1",
+   "categories": [
+    "AI Extensions"
+   ],
+   "provides_models": false,
+   "has_mcp": false,
+   "metadata_count": 3,
+   "updated_at": 1791891445,
+   "source_url": "https://github.com/raycast/extensions/tree/645cb29302e41f7730b0e68d84777feb0ad096a9/extensions/kill-process/",
+   "readme_url": null,
+   "readme_assets_path": "https://github.com/raycast/extensions/raw/645cb29302e41f7730b0e68d84777feb0ad096a9/extensions/kill-process//",
+   "icons": {
+    "light": "https://files.raycast.com/b8kkh6bhnframrlyseywhsc2ao6x",
+    "dark": null
+   },
+   "commands": [
+    {
+     "name": "index",
+     "title": "Kill Process",
+     "subtitle": "",
+     "description": "Lists all running processes, ordered by CPU or memory usage and allows (force) killing one",
+     "mode": "view"
+    }
+   ],
+   "download_url": "https://extensions.raycast-releases.com/f6c23kbhj98374c7egxknw5mzryb",
+   "tint_color": "#fff700"
+  },
+  {
+   "id": "40ebc708-964f-473b-8d19-d4e9cbd27ae9",
+   "name": "color-picker",
+   "native_id": null,
+   "platforms": [
+    "macOS",
+    "Windows"
+   ],
+   "author": {
+    "name": "Thomas Paul Mann",
+    "handle": "thomas",
+    "avatar": "https://files.raycast.com/0pxp15wpgafuv7tspd7lbrubag0m"
+   },
+   "created_at": 1675858513,
+   "kill_listed_at": 0,
+   "owner": {
+    "name": "Thomas Paul Mann",
+    "handle": "thomas",
+    "avatar": "https://files.raycast.com/0pxp15wpgafuv7tspd7lbrubag0m"
+   },
+   "status": "active",
+   "is_new": false,
+   "access": "public",
+   "store_url": "https://www.raycast.com/thomas/color-picker",
+   "download_count": 637697,
+   "title": "Color Picker",
+   "description": "Pick and organize colors, everywhere on your Mac",
+   "commit_sha": "3f380d237cf8652e38a8c3edb36b2d4f8c0102ef",
+   "relative_path": "extensions/color-picker/",
+   "api_version": "2.10.1",
+   "categories": [
+    "Design Tools",
+    "AI Extensions"
+   ],
+   "provides_models": false,
+   "has_mcp": false,
+   "metadata_count": 6,
+   "updated_at": 1793945746,
+   "source_url": "https://github.com/raycast/extensions/tree/3f380d237cf8652e38a8c3edb36b2d4f8c0102ef/extensions/color-picker/",
+   "readme_url": "https://github.com/raycast/extensions/tree/3f380d237cf8652e38a8c3edb36b2d4f8c0102ef/extensions/color-picker/README.md",
+   "readme_assets_path": "https://github.com/raycast/extensions/raw/3f380d237cf8652e38a8c3edb36b2d4f8c0102ef/extensions/color-picker//",
+   "icons": {
+    "light": "https://files.raycast.com/p2r8a9gogupyymp0rlte627seykx",
+    "dark": null
+   },
+   "commands": [
+    {
+     "name": "pick-color",
+     "title": "Pick Color",
+     "subtitle": "",
+     "description": "Pick a color on your desktop",
+     "mode": "no-view"
+    },
+    {
+     "name": "extract-color",
+     "title": "Extract Color from Selected Image",
+     "subtitle": "",
+     "description": "Extract colors from the selected File Explorer image",
+     "mode": "view"
+    }
+   ],
+   "download_url": "https://extensions.raycast-releases.com/zom2w2hlhrwxlhkxx7vvdg9s8di8",
+   "tint_color": "#00b3ff"
+  }
+ ],
+ "total_results": 3538
+}
