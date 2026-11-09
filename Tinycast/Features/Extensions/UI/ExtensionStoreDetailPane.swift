@@ -10,6 +10,7 @@ struct ExtensionStoreDetailPane: View {
     let detail: ExtensionStoreSession.Fetch<ExtensionStoreDetail>?
     let readme: ExtensionStoreSession.Fetch<String>?
     let failure: String?
+    let onCategory: (String) -> Void
 
     private static let iconSide: CGFloat = 48
     private static let shotHeight: CGFloat = 150
@@ -66,7 +67,13 @@ struct ExtensionStoreDetailPane: View {
             let categories = loaded?.listing.categories ?? entry.listing?.categories ?? []
             if !categories.isEmpty {
                 FlowLayout(spacing: metrics.spacing.sm) {
-                    ForEach(categories, id: \.self) { ExtensionStoreTag(text: $0) }
+                    ForEach(categories, id: \.self) { name in
+                        Button { onCategory(name) } label: {
+                            ExtensionStoreTag(text: ExtensionStoreSession.title(ofCategory: name))
+                        }
+                        .buttonStyle(.plain)
+                        .help(String(localized: "Show this category"))
+                    }
                 }
             }
         }

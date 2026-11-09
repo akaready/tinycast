@@ -532,6 +532,14 @@ store data where known; an install from a folder or GitHub has no store page, so
 information. Updates is the manager's pending set. Raycast lists what a local Raycast has built that
 Tinycast lacks.
 
+**Categories.** The filter menu lists Raycast's sixteen categories under the filters, in the store's own
+order (the store takes no sort, so nothing is sorted or over-fetched). A category is the search
+endpoint's `category:"<English name>"` operator inside `q`, combined with any typed text; a category
+alone still pages in the store's order. Under All it reloads the list and resets paging; under
+Installed, Updates and Raycast it narrows what is held by the extension's categories, leaving out any
+whose categories are unknown. A category tag on an extension's page picks that category and returns to
+All. Names are localized; the query value is always the English one.
+
 **Doing what Settings → Extensions does.** Nobody needs Settings to manage the library:
 
 | Settings → Extensions | In the Store |

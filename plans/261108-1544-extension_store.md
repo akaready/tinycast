@@ -11,7 +11,9 @@ plan_date: 2026-11-08
 `ExtensionStoreScreen`: browse by downloads, search, paging, a detail pane (screenshots, commands,
 changelog, README), install, update and uninstall. Parity actions: Update All and an updates banner,
 Check for Updates, Install from GitHub (a row when the query parses as a repo), a Raycast filter
-with Import / Import All, and Add from Folder. Translated into all eight languages; docs updated.
+with Import / Import All, and Add from Folder. Category filtering through the store's
+`category:"…"` search operator (idea from domainus's implementation), in the store's own order.
+Translated into all eight languages; docs updated.
 Merged into `local` and installed in `/Applications`.
 **Verified:** full `run-tests.sh` (113/113), `lint.sh`, the purity grep, and the unsigned Debug build
 pass. In the installed app, the deeplink opens the Store palette, at a 94 MB footprint with it open.

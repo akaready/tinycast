@@ -86,6 +86,12 @@ final class ExtensionStoreSession {
 
         var downloadCount: Int? { listing?.downloadCount }
 
+        /// The store's own list when it has one, else the manifest's.
+        var categories: [String] {
+            let stored = listing?.categories ?? []
+            return stored.isEmpty ? local?.manifest.categories ?? [] : stored
+        }
+
         var handle: String? {
             if case .github = kind { return nil }
             return listing?.storeHandle ?? local?.manifest.storeHandle
@@ -100,6 +106,28 @@ final class ExtensionStoreSession {
         }
     }
 
+    static func title(ofCategory name: String) -> String {
+        switch name {
+        case "AI Extensions": return String(localized: "AI Extensions")
+        case "Applications": return String(localized: "Applications")
+        case "Communication": return String(localized: "Communication")
+        case "Data": return String(localized: "Data")
+        case "Design Tools": return String(localized: "Design Tools")
+        case "Developer Tools": return String(localized: "Developer Tools")
+        case "Documentation": return String(localized: "Documentation")
+        case "Finance": return String(localized: "Finance")
+        case "Fun": return String(localized: "Fun")
+        case "Media": return String(localized: "Media")
+        case "News": return String(localized: "News")
+        case "Productivity": return String(localized: "Productivity")
+        case "Security": return String(localized: "Security")
+        case "System": return String(localized: "System")
+        case "Web": return String(localized: "Web")
+        case "Other": return String(localized: "Other")
+        default: return name
+        }
+    }
+
     private static let debounce = Duration.milliseconds(350)
     private static let selectionSettle = Duration.milliseconds(200)
     private static let pageLookahead = 3
@@ -107,6 +135,7 @@ final class ExtensionStoreSession {
 
     private(set) var query = ""
     private(set) var filter = Filter.all
+    private(set) var category: String?
     private(set) var listings: [ExtensionListing] = []
     private(set) var phase = ListPhase.idle
     private(set) var isLoadingMore = false
@@ -160,6 +189,7 @@ final class ExtensionStoreSession {
         (searchTask, pageTask, detailTask, updateTask, raycastTask) = (nil, nil, nil, nil, nil)
         query = ""
         filter = .all
+        category = nil
         listings = []
         phase = .idle
         isLoadingMore = false
@@ -183,15 +213,15 @@ final class ExtensionStoreSession {
                 .merging(extensions.updates) { _, update in update }
             return extensions.installed
                 .map { Entry(listing: known[$0.manifest.name], installed: $0) }
-                .filter(matchesQuery).sorted(by: Self.byTitle)
+                .filter(matches).sorted(by: Self.byTitle)
         case .updates:
             return extensions.updates.values
                 .map { Entry(listing: $0, installed: extensions.extensionNamed($0.name)) }
-                .filter(matchesQuery).sorted(by: Self.byTitle)
+                .filter(matches).sorted(by: Self.byTitle)
         case .raycast:
             return raycastPending
                 .map { Entry(listing: nil, installed: nil, raycastCopy: $0) }
-                .filter(matchesQuery).sorted(by: Self.byTitle)
+                .filter(matches).sorted(by: Self.byTitle)
         }
     }
 
@@ -203,9 +233,17 @@ final class ExtensionStoreSession {
         lhs.title.localizedStandardCompare(rhs.title) == .orderedAscending
     }
 
-    private func matchesQuery(_ entry: Entry) -> Bool {
-        query.isEmpty
-            || [entry.title, entry.author, entry.summary].contains { $0.localizedStandardContains(query) }
+    /// The text and the category, read locally; an entry whose categories are unknown is left out.
+    private func matches(_ entry: Entry) -> Bool {
+        let matchesCategory =
+            category.map { wanted in
+                entry.categories.contains { $0.caseInsensitiveCompare(wanted) == .orderedSame }
+            } ?? true
+        return matchesCategory
+            && (query.isEmpty
+                || [entry.title, entry.author, entry.summary].contains {
+                    $0.localizedStandardContains(query)
+                })
     }
 
     func state(for entry: Entry) -> InstallState {
@@ -231,7 +269,29 @@ final class ExtensionStoreSession {
     func setFilter(_ next: Filter) {
         guard next != filter else { return }
         filter = next
-        if next == .all, pagesQuery != query { scheduleReload() }
+        if next == .all, pagesQuery != request { scheduleReload() }
+    }
+
+    /// Reloads the All view at once; the other filters narrow what they already hold.
+    func setCategory(_ next: String?) {
+        guard next != category else { return }
+        category = next
+        guard filter == .all, isRunning else { return }
+        searchTask?.cancel()
+        reload()
+    }
+
+    /// A category picked from a page: leaves whichever filter was up for the store's own list.
+    func browseCategory(_ next: String) {
+        filter = .all
+        category = next
+        searchTask?.cancel()
+        reload()
+    }
+
+    /// What the search endpoint is asked: the text and the category together, empty to browse.
+    private var request: String {
+        ExtensionStoreResponse.searchQuery(text: query, category: category)
     }
 
     /// Called with the highlighted or an appearing row, so a page loads as the list nears its end.
@@ -287,9 +347,9 @@ final class ExtensionStoreSession {
         pageTask?.cancel()
         generation += 1
         (nextPage, fetched, hasMore, moreFailed, isLoadingMore) = (1, 0, false, false, false)
-        pagesQuery = query
+        pagesQuery = request
         phase = .loading
-        let (query, token) = (query, generation)
+        let (query, token) = (request, generation)
         pageTask = Task { await loadPage(1, query: query, token: token) }
     }
 
