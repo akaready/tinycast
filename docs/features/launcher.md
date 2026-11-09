@@ -489,7 +489,7 @@ never suggested, however often they are opened:
    faster way in;
 3. while fewer than five, built-in commands with no alias or shortcut, by
    `CommandID.suggestionPriority`: Clipboard History, Search Files, My Schedule, Search Emoji &
-   Symbols, then Create Quicklink and Create Snippet. A command whose feature is off is absent from the
+   Symbols, then Create Quicklink and Create Snippet, then Store. A command whose feature is off is absent from the
    index, so it is never offered.
 
 A suggested entry leaves its kind section below, so no row appears twice. `AppIndex.Results` carries
@@ -672,8 +672,8 @@ and three places read it: `FeatureCommandsSection` draws the pane's rows from it
 category gate for it in both `isVisible` and `allowsHotKey`. Stamping the entry rather than sniffing its
 id is what keeps "which pane owns this" out of the entry-ID namespace.
 
-Eleven panes own commands today — AI, Quick Actions, File Search, Notes, Snippets, Navigation,
-Window Management, Clipboard, Emoji, Calendar and Quicklinks. What is left in Settings › Commands is
+Twelve panes own commands today — AI, Quick Actions, File Search, Notes, Snippets, Navigation,
+Window Management, Clipboard, Emoji, Calendar, Quicklinks and Extensions (the Store). What is left in Settings › Commands is
 the set no feature switch governs: Calculator History, Open Camera, the three backup commands, Check
 for Updates, Tinycast Settings, About, Support and Quit.
 

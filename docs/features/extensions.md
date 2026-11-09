@@ -6,7 +6,7 @@ produces, rendered natively into the palette. No Electron, no browser, no Node.j
 - [How it works](#how-it-works) · [The JS runtime](#the-js-runtime) ·
   [The Swift host](#the-swift-host) · [Rendering](#rendering)
 - [Turning it on](#turning-it-on) · [Installing extensions](#installing-extensions) ·
-  [Installing from GitHub](#installing-from-github) · [Updates](#updates) · [Shortcuts](#shortcuts) · [Aliases](#aliases) · [Deeplinks](#deeplinks) ·
+  [The Store](#the-store) · [Installing from GitHub](#installing-from-github) · [Updates](#updates) · [Shortcuts](#shortcuts) · [Aliases](#aliases) · [Deeplinks](#deeplinks) ·
   [What's supported](#whats-supported) ·
   [What isn't](#what-isnt-supported-yet) · [Working on the runtime](#working-on-the-runtime)
 
@@ -481,7 +481,10 @@ like everything else, so a Debug build never shares installs with a release chan
 dependencies, a `node_modules/` of pre-built packages — byte-for-byte the layout Raycast's own
 build produces.
 
-Settings → Extensions offers four routes, under **Install New**:
+The launcher's **Store** command (`CommandID.store`, `tinycast://command/store`) is the first route and
+the one to prefer: browse, search, install, update and uninstall without opening Settings. It is
+described under [The Store](#the-store). Settings → Extensions offers four routes, under
+**Install New**:
 
 1. **Search extensions** — searches the Raycast Store and installs the bundle it already built. Nothing
    is compiled, so no Node or package manager is involved. The search is
@@ -502,6 +505,48 @@ never the multi-megabyte `.js.map` Raycast writes beside each bundle. Store `dis
 third-party packages external and ship them, pre-built CommonJS, under `node_modules/`; the embedded
 runtime resolves those from the command's directory, never above the extension's own folder, so
 they must survive the install. A build that inlined everything simply has no such folder.
+
+## The Store
+
+`PaletteMode.extensionStore`, drawn by `ExtensionStoreScreen`: a list on the left and the selected
+extension's page on the right. The command exists only while `extensionsEnabled` is on
+(`ExtensionCoordinator.applyEnabled` hides it through `AppIndex.setCommandsVisible`, and
+`SettingsTab.extensions` owns it, so its alias, shortcut and launcher switch are the Commands section of that pane). `ExtensionStoreSession` lives on `ExtensionCoordinator`, not in the
+view, so the screen's appearing and leaving only start and end it: `end()` cancels every request and
+drops everything fetched, so nothing outlives the palette except an install already under way.
+
+**Data.** An empty query pages the store's list, most downloaded first
+(`raycast.com/frontend_api/extensions`); a query pages `…/extensions/search`. Both are unofficial and
+return ten entries a page. Selecting a row, once it has stayed put for 200 ms, fetches that extension's
+detail record (`/api/v1/extensions/<handle>/<name>`: screenshots, commands, changelog) and then its
+README, rewritten from the `github.com/…/tree/<sha>/…` link to `raw.githubusercontent.com`. Screenshots
+are fetched only for the open page and downsampled with ImageIO to 800 px. **The Store fetches only
+what is on screen** (the page of the list being scrolled, one detail, one README, at most one
+screenshot strip), because Raycast's terms forbid bulk gathering: there is no prefetch of other pages
+or details, and nothing is written to disk. The caches are in memory, keep the last 20 pages, and go
+with `end()`. Every result is checked against the query, selection and generation it was asked for
+before it is applied.
+
+**Filters.** All, Installed, Updates and Raycast. Installed lists what is on disk and joins it with
+store data where known; an install from a folder or GitHub has no store page, so it shows local
+information. Updates is the manager's pending set. Raycast lists what a local Raycast has built that
+Tinycast lacks.
+
+**Doing what Settings → Extensions does.** Nobody needs Settings to manage the library:
+
+| Settings → Extensions | In the Store |
+| --------------------- | ------------ |
+| Search extensions, Install, Reinstall | Browse and search; ↵ installs, with progress on the row |
+| Update, **Update All**, the check on open | The check runs when the Store opens; **Check for Updates** in ⌘K; an _N updates available_ banner with **Update All** when any are pending (also in ⌘K), **Update** per row |
+| Uninstall | **Uninstall** in ⌘K or ⌃X, through the same `confirmUninstall` dialog |
+| Install from GitHub | Typing anything `ExtensionGitHubSource` parses (`owner/repo`, a clone URL, a `/tree/<ref>/<path>` link) puts an **Install from GitHub** row first. ↵ confirms (it runs the extension's build script), hides the palette, builds with the package manager and search paths set in Settings, and reports in a HUD or a dialog |
+| Import from Raycast, Import All | The **Raycast** filter, **Import** per row and **Import All from Raycast** in ⌘K |
+| Add from folder | **Add from Folder…** in ⌘K: hides the palette, then the open panel |
+| Per-extension launcher switch, icon, preferences, commands, shortcuts | **Open** goes to that extension's page in Settings |
+| Package manager and search paths, **Clean Up** leftovers, the on switch | Settings only; **Extension Settings…** in ⌘K goes there |
+
+The open panel and the confirmation dialogs need the app active and are unreachable behind the
+floating palette, so those actions hide it first.
 
 ## Installing from GitHub
 
@@ -572,7 +617,8 @@ toolchain layout.
 ## Updates
 
 Only store extensions update; a GitHub or folder install is the user's own copy, and reinstalling it
-is how it changes. **The check runs when Settings › Extensions opens, and at no other time.**
+is how it changes. **The check runs when Settings › Extensions opens and when the Store opens, and at no other time**,
+unless Check for Updates is chosen in the Store's ⌘K menu.
 
 `ExtensionVersionStore` records the store's `commit_sha` for each store-sourced extension in
 `extension-versions.json`, because nothing installed carries a version: neither the store's zip nor

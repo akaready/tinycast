@@ -86,9 +86,10 @@ Where a reset leaves the highlight is the screen's to say too. Every reset — a
 new filter — goes through `RootPaletteView.land()`, which reads `landingSelection`, so handlers that
 fire in one update agree whatever order they run in. `onAppear` lands as well: the first show builds
 the view after `prepare` has run, so no change handler ever sees that reset. The landing is row 0 on
-every screen but two: the clipboard lands past its pins
-([clipboard.md](clipboard.md#pinned-entries)), and Search Quicklinks lands on the row a prompt names
-([quicklinks.md](quicklinks.md)).
+every screen but three: the clipboard lands past its pins
+([clipboard.md](clipboard.md#pinned-entries)), Search Quicklinks lands on the row a prompt names
+([quicklinks.md](quicklinks.md)), and the Store lands past its Install from GitHub row, which builds
+code ([extensions.md](extensions.md#the-store)).
 
 | Mode                   | Screen                      | Inner list                                                                                               |
 | ---------------------- | --------------------------- | -------------------------------------------------------------------------------------------------------- |
@@ -109,6 +110,7 @@ every screen but two: the clipboard lands past its pins
 | `.snippetEditor`       | `SnippetEditorScreen`       | `SnippetEditorView` (see [snippets.md](snippets.md#launcher-editor))                                     |
 | `.dictionary`          | `DictionaryScreen`          | `DictionaryEntryView` (see [dictionary.md](dictionary.md))                                               |
 | `.extensionCommand`    | `ExtensionCommandScreen`    | `ExtensionCommandView` (see [extensions.md](extensions.md))                                              |
+| `.extensionStore`      | `ExtensionStoreScreen`      | `ExtensionStoreView` + `ExtensionStoreDetailPane` (see [extensions.md](extensions.md#the-store))          |
 
 **Tab rings the three surfaces a reader opens directly — launcher → AI chat → clipboard → launcher**
 — unless the screen claims it through `tab(at:backwards:)` (native editors and extension forms walk
