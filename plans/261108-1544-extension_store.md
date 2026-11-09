@@ -7,16 +7,22 @@ plan_date: 2026-11-08
 
 ## Outcome — in progress 2026-11-08
 
-**Landed:** Steps 1, 2 and 4 on `feature/extension-store`: browse/search paging, detail and README
-fetching with `ext-store-test` cases on saved fixtures, `ExtensionStoreSession`, and
-`ExtensionStoreScreen` with its detail pane. Nothing can open the screen yet.
-**Verified:** `ext-store-test`, `ext-test`, `lint.sh`, the Model purity grep, and an unsigned Debug
-build all pass. Not yet run in the app, so nothing has been seen on screen.
-**Deviated:** `ExtensionListing` gained `categories`, `updatedAt`, `storeURL` and a derived
-`storeHandle` (the detail lookup needs the owner's handle). "Open" on an installed extension opens
-its Settings page. Paging fires from both the selection and rows scrolling into view.
-**Left undone:** Step 3 wiring and naming (waits on Q-A), Step 5 Settings (Q-B), Step 6 docs,
-translations in all eight languages, the manual pass, memory and leak numbers. Q-C (upstream) is open.
+**Landed:** the **Store** command (`tinycast://command/store`), hidden while extensions are off, opening
+`ExtensionStoreScreen`: browse by downloads, search, paging, a detail pane (screenshots, commands,
+changelog, README), install, update and uninstall. Parity actions: Update All and an updates banner,
+Check for Updates, Install from GitHub (a row when the query parses as a repo), a Raycast filter
+with Import / Import All, and Add from Folder. Translated into all eight languages; docs updated.
+Merged into `local` and installed in `/Applications`.
+**Verified:** full `run-tests.sh` (113/113), `lint.sh`, the purity grep, and the unsigned Debug build
+pass. In the installed app, the deeplink opens the Store palette, at a 94 MB footprint with it open.
+Nobody had looked at it on screen yet when this was written.
+**Deviated:** named "Store", not "Extension Store" (Q-A). The Settings search panel stays (Q-B), and
+the Store gets parity instead of Step 5. Owning the command under Extensions added a Commands section
+to the Extensions pane, so it can take an alias and shortcut. `ExtensionListing` gained
+`categories`, `updatedAt`, `storeURL` and `storeHandle`. "Open" goes to the extension's Settings page.
+**Left undone:** the user's hands-on pass and visual review; memory peak with screenshots loaded and
+a leak check; ⌘P for the filter; GitHub installs report progress only as a short HUD. Fork-only for
+now (Q-C).
 
 ## Context
 
