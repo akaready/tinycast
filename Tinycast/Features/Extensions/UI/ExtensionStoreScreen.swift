@@ -12,7 +12,7 @@ struct ExtensionStoreScreen: PaletteScreen {
     let openArgumentOptions: (String) -> Void
 
     private static let filterField = "filter"
-    private static let filterWidth: CGFloat = 132
+    private static let filterWidth: CGFloat = 176
 
     private var metrics: InterfaceMetrics { core.settings.interfaceSize.metrics }
 
@@ -272,19 +272,38 @@ struct ExtensionStoreScreen: PaletteScreen {
             placement: .besideSearchField,
             view: AnyView(
                 HeaderMenuButton(
-                    title: session.filter.title, systemImage: session.filter.systemImage,
+                    title: session.category.map(ExtensionStoreSession.title(ofCategory:))
+                        ?? session.filter.title,
+                    systemImage: session.category == nil ? session.filter.systemImage : "tag",
                     isOpen: false, help: String(localized: "Filter extensions"),
                     action: { openArgumentOptions(Self.filterField) })))
     }
 
+    /// The filters, then the store's categories; All is the way back to the whole list.
     private var filterMenu: PopoverMenuContent {
-        PopoverMenuContent(
-            header: nil,
-            items: ExtensionStoreSession.Filter.allCases.map { filter in
-                PopoverMenuItem(
-                    title: filter.title, icon: session.filter == filter ? .symbol("checkmark") : .blank
-                ) { session.setFilter(filter) }
-            })
+        let filters = ExtensionStoreSession.Filter.allCases.map { filter in
+            let isChosen = session.filter == filter && (filter != .all || session.category == nil)
+            return PopoverMenuItem(
+                title: filter.title, icon: isChosen ? .symbol("checkmark") : .blank
+            ) {
+                session.setFilter(filter)
+                if filter == .all { session.setCategory(nil) }
+                vm.selection = 0
+            }
+        }
+        let categories = ExtensionStoreResponse.categories.enumerated().map { index, name in
+            let isChosen = session.category == name
+            return PopoverMenuItem(
+                title: ExtensionStoreSession.title(ofCategory: name),
+                icon: isChosen ? .symbol("checkmark") : .blank,
+                sectionTitle: index == 0 ? String(localized: "Categories") : nil,
+                startsSection: index == 0
+            ) {
+                session.setCategory(isChosen ? nil : name)
+                vm.selection = 0
+            }
+        }
+        return PopoverMenuContent(header: nil, items: filters + categories)
     }
 
     // MARK: - Body
@@ -298,6 +317,10 @@ struct ExtensionStoreScreen: PaletteScreen {
                 onActions: { index in
                     vm.selection = index
                     openActions()
+                },
+                onCategory: { name in
+                    session.browseCategory(name)
+                    vm.selection = 0
                 }
             )
             .onAppear {

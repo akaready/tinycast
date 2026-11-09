@@ -14,6 +14,20 @@ enum ExtensionStoreResponse {
         return components?.url
     }
 
+    /// Raycast's categories in the store's own order; each is also what `category:"…"` takes.
+    static let categories = [
+        "AI Extensions", "Applications", "Communication", "Data", "Design Tools", "Developer Tools",
+        "Documentation", "Finance", "Fun", "Media", "News", "Productivity", "Security", "System", "Web",
+        "Other"
+    ]
+
+    /// The search endpoint filters with an operator inside `q`; nothing at all means browse.
+    static func searchQuery(text: String, category: String?) -> String {
+        let words = text.trimmingCharacters(in: .whitespacesAndNewlines)
+        let filter = category.map { "category:\"\($0)\"" }
+        return [words, filter].compactMap { $0 }.filter { !$0.isEmpty }.joined(separator: " ")
+    }
+
     static func browseURL(page: Int) -> URL? {
         var components = URLComponents(string: "https://www.raycast.com/frontend_api/extensions")
         components?.queryItems = [

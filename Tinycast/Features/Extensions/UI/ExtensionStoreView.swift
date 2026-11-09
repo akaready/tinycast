@@ -13,6 +13,7 @@ struct ExtensionStoreView: View {
     let onSelect: (Int) -> Void
     let onActivate: () -> Void
     let onActions: (Int) -> Void
+    let onCategory: (String) -> Void
 
     private var selected: Entry? { rows.indices.contains(selection) ? rows[selection] : nil }
 
@@ -34,7 +35,8 @@ struct ExtensionStoreView: View {
                         entry: selected, state: selected.map(session.state(for:)),
                         detail: selected.flatMap { session.details[$0.key] },
                         readme: selected.flatMap { session.readmes[$0.key] },
-                        failure: selected.flatMap { session.failures[$0.id] })
+                        failure: selected.flatMap { session.failures[$0.id] },
+                        onCategory: onCategory)
                 }
             }
         }

@@ -200,6 +200,23 @@ struct ExtensionStoreTests {
 
         check("the owner's handle comes from the address", first.storeHandle == "rolandleth")
 
+        let onlyCategory = ExtensionStoreResponse.searchQuery(text: "  ", category: "Developer Tools")
+        check("a category alone is the operator", onlyCategory == #"category:"Developer Tools""#)
+        let both = ExtensionStoreResponse.searchQuery(text: " git ", category: "Developer Tools")
+        check("text comes first, trimmed", both == #"git category:"Developer Tools""#)
+        check("no text and no category is a browse", ExtensionStoreResponse.searchQuery(text: " ", category: nil) == "")
+        check("text alone is unchanged", ExtensionStoreResponse.searchQuery(text: "git", category: nil) == "git")
+        let encoded = ExtensionStoreResponse.searchURL(query: both, page: 2)?.absoluteString ?? ""
+        check(
+            "the quotes and spaces are percent-encoded",
+            encoded.contains("q=git%20category:%22Developer%20Tools%22"))
+        check("the category keeps the page", encoded.contains("page=2"))
+        check(
+            "every category is in the store's order, Other last",
+            ExtensionStoreResponse.categories.count == 16
+                && ExtensionStoreResponse.categories.first == "AI Extensions"
+                && ExtensionStoreResponse.categories.last == "Other")
+
         let url = ExtensionStoreResponse.browseURL(page: 3)?.absoluteString ?? ""
         check("browse addresses the list", url.hasPrefix("https://www.raycast.com/frontend_api/extensions?"))
         check("browse passes its page", url.contains("page=3"))
