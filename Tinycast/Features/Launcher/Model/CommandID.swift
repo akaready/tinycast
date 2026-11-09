@@ -43,6 +43,7 @@ enum CommandID: String, CaseIterable, Sendable {
     case exportSettings = "command:export-settings"
     case importSettings = "command:import-settings"
     case importFromRaycast = "command:import-from-raycast"
+    case store = "command:store"
     case checkForUpdates = "command:check-for-updates"
     case settings = "command:settings"
     case about = "command:about"
@@ -118,6 +119,7 @@ enum CommandID: String, CaseIterable, Sendable {
         case .exportSettings: return "Export Backup"
         case .importSettings: return "Import Backup"
         case .importFromRaycast: return "Import from Raycast"
+        case .store: return "Store"
         case .checkForUpdates: return "Check for Updates"
         case .settings: return "Tinycast Settings"
         case .about: return "About Tinycast"
@@ -168,6 +170,7 @@ enum CommandID: String, CaseIterable, Sendable {
         case .exportSettings: return "square.and.arrow.up"
         case .importSettings: return "square.and.arrow.down"
         case .importFromRaycast: return "arrow.down.doc"
+        case .store: return "storefront"
         case .checkForUpdates: return "arrow.down.circle"
         case .settings: return "gearshape"
         case .about: return "info.circle"
@@ -213,6 +216,7 @@ enum CommandID: String, CaseIterable, Sendable {
         case .mySchedule: 60
         case .searchEmoji: 50
         case .createQuicklink, .createSnippet: 30
+        case .store: 20
         default: nil
         }
     }

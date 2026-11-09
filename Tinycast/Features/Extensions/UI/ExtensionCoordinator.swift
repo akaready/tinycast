@@ -10,6 +10,8 @@ final class ExtensionCoordinator {
     private let settings: AppSettings
     /// Message-HUD presentation only — never for state this type owns.
     private unowned let core: AppCore
+    /// Owned here so it outlives the Store screen, which starts and ends it as it comes and goes.
+    let storeSession: ExtensionStoreSession
 
     init(
         extensions: ExtensionManager,
@@ -25,6 +27,7 @@ final class ExtensionCoordinator {
         self.settingsCoordinator = settingsCoordinator
         self.settings = settings
         self.core = core
+        storeSession = ExtensionStoreSession(extensions: extensions)
     }
 
     // MARK: - Feature presence
@@ -32,7 +35,21 @@ final class ExtensionCoordinator {
     /// Applies both switches as they stand — on launch, and after a backup import moves them.
     func applyEnabled() {
         extensions.setShowsInLauncher(settings.extensionsShowInLauncher)
+        applyStoreVisibility()
         Task { await extensions.setEnabled(settings.extensionsEnabled) }
+    }
+
+    private func applyStoreVisibility() {
+        core.appIndex.setCommandsVisible([.store], settings.extensionsEnabled)
+    }
+
+    func showStore() {
+        guard settings.extensionsEnabled else {
+            core.showMessage(
+                String(localized: "Extensions are disabled — enable them in Settings"), tone: .danger)
+            return
+        }
+        paletteCoordinator.togglePalette(mode: .extensionStore)
     }
 
     /// Also consent to run third-party JavaScript, so it asks before it starts.
@@ -40,6 +57,7 @@ final class ExtensionCoordinator {
         guard enabled != settings.extensionsEnabled else { return }
         guard enabled else {
             settings.extensionsEnabled = false
+            applyStoreVisibility()
             Task { await extensions.setEnabled(false) }
             return
         }
@@ -60,6 +78,7 @@ final class ExtensionCoordinator {
             else { return }
 
             settings.extensionsEnabled = true
+            applyStoreVisibility()
             await extensions.setEnabled(true)
         }
     }
