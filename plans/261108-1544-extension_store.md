@@ -1,9 +1,22 @@
 ---
-status: planned
+status: in-progress
 plan_date: 2026-11-08
 ---
 
 # Extension Store: a top-level launcher command
+
+## Outcome — in progress 2026-11-08
+
+**Landed:** Steps 1, 2 and 4 on `feature/extension-store`: browse/search paging, detail and README
+fetching with `ext-store-test` cases on saved fixtures, `ExtensionStoreSession`, and
+`ExtensionStoreScreen` with its detail pane. Nothing can open the screen yet.
+**Verified:** `ext-store-test`, `ext-test`, `lint.sh`, the Model purity grep, and an unsigned Debug
+build all pass. Not yet run in the app, so nothing has been seen on screen.
+**Deviated:** `ExtensionListing` gained `categories`, `updatedAt`, `storeURL` and a derived
+`storeHandle` (the detail lookup needs the owner's handle). "Open" on an installed extension opens
+its Settings page. Paging fires from both the selection and rows scrolling into view.
+**Left undone:** Step 3 wiring and naming (waits on Q-A), Step 5 Settings (Q-B), Step 6 docs,
+translations in all eight languages, the manual pass, memory and leak numbers. Q-C (upstream) is open.
 
 ## Context
 
