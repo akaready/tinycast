@@ -546,7 +546,7 @@ active category or else the active filter (`PaletteFilterAction.extensionStoreFi
 | Settings → Extensions | In the Store |
 | --------------------- | ------------ |
 | Search extensions, Install, Reinstall | Browse and search; ↵ installs, with progress on the row |
-| Update, **Update All**, the check on open | The check runs when the Store opens; **Check for Updates** in ⌘K; an _N updates available_ banner with **Update All** when any are pending (also in ⌘K), **Update** per row |
+| Update, **Update All**, the check on open | The check runs when the Store opens; **Check for Updates** in ⌘K; an _N updates available_ row at the top (after the GitHub row) when any are pending, which ↵ or a double click runs as **Update All** (also in ⌘K), **Update** per row |
 | Uninstall | **Uninstall** in ⌘K or ⌃X, through the same `confirmUninstall` dialog |
 | Install from GitHub | Typing anything `ExtensionGitHubSource` parses (`owner/repo`, a clone URL, a `/tree/<ref>/<path>` link) puts an **Install from GitHub** row first. ↵ confirms (it runs the extension's build script), hides the palette, builds with the package manager and search paths set in Settings, and reports in a HUD or a dialog |
 | Import from Raycast, Import All | The **Raycast** filter, **Import** per row and **Import All from Raycast** in ⌘K |
