@@ -185,6 +185,8 @@ struct PaletteHeaderAccessory {
         case afterQuery
         /// Beside a search field that stays a search field, prompt and full width intact.
         case besideSearchField
+        /// At the header's trailing edge, where the palette's own filter buttons sit.
+        case trailing
     }
 
     /// How much room the strip needs, so the search field can give it up.

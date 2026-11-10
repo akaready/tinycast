@@ -806,6 +806,7 @@ struct RootPaletteView: View {
             headerField
                 .simultaneousGesture(TapGesture().onEnded { resetCompactSelection() })
             if let accessory = headerAccessory {
+                if accessory.placement == .trailing { headerGutter(width: metrics.spacing.md) }
                 accessory.view
                 // Given room last: at the default priority it would split it with the field.
                 Spacer(minLength: 0).layoutPriority(-1)
@@ -932,7 +933,7 @@ struct RootPaletteView: View {
 
     /// Fixed only where something shares the row: the accessory strip, or a screen's own title.
     private var searchFieldWidth: CGFloat? {
-        if hidesSearchField { return nil }
+        if hidesSearchField || headerAccessory?.placement == .trailing { return nil }
         return headerAccessory.map(searchFieldWidth)
     }
 

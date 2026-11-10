@@ -214,6 +214,8 @@ these invariants:
   listed) keeps the prompt and sizes the field to it, so an empty field reads "Search quicklinks…"
   with the chip after it and no glyph repeating the row below. One measurement serves both: the
   field's own text, which is the prompt when nothing is typed and "" under `.afterQuery`.
+  `.trailing` (the Store's filter) leaves the field unsized and puts the strip at the header's
+  trailing edge, where the palette's own filter buttons sit, so its menu opens under it.
 - Argument focus is its own `@FocusState`, `argumentFocused`, keyed by field id. Every way out
   of its ring — moving the selection, Escape, Tab past the last field, or an arrow at its edge — goes through
   `returnFocusToSearchField()`, because the row that owned those fields is about to stop being
