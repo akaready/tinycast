@@ -12,7 +12,7 @@ final class HotKeyManager {
         didSet {
             guard dictationEnabled != oldValue else { return }
             if !dictationEnabled { onDictationCancelled?() }
-            syncModifierTaps()
+            refreshRegistrations()
         }
     }
     var dictationHoldToTalk = false {
@@ -268,7 +268,7 @@ final class HotKeyManager {
         let originalActions = actions.reduce(into: [KeyShortcut: HotKeyAction]()) { result, action in
             if let shortcut = binding(for: action)?.shortcut { result[shortcut] = action }
         }
-        for action in actions {
+        for action in actions where allowsAction?(action) ?? true {
             guard let equivalent = binding(for: action)?.shortcut?.secureInputEquivalent(of: chord)
             else { continue }
             let original = originalActions[equivalent]
@@ -324,7 +324,8 @@ final class HotKeyManager {
     /// A hold reserves its physical modifier across both tap gestures.
     func conflictOwner(of binding: HotKeyBinding, excluding action: HotKeyAction) -> String? {
         for candidate in candidateActions where candidate != action {
-            guard let other = self.binding(for: candidate) else { continue }
+            // A disabled action holds no combo, so it cannot be in the way.
+            guard allowsAction?(candidate) ?? true, let other = self.binding(for: candidate) else { continue }
             let holdsModifier =
                 dictationHoldToTalk
                 && (action == .dictation && binding.holdKey != nil
@@ -392,13 +393,26 @@ final class HotKeyManager {
         }
     }
 
-    /// Hands a combo to Carbon; a modifier-only binding has no per-action registration.
+    /// Hands a combo to Carbon; a modifier-only binding has no per-action registration. A disabled
+    /// action keeps its stored binding but holds no combo, so the keys reach other apps.
     private func register(_ action: HotKeyAction) {
-        guard let shortcut = binding(for: action)?.shortcut else { return }
+        guard allowsAction?(action) ?? true, let shortcut = binding(for: action)?.shortcut else {
+            return
+        }
         center.register(
             id: action.defaultsKey, shortcut: shortcut,
             onKeyDown: { [weak self] _ in self?.perform(action) },
             onKeyUp: action == .dictation ? { [weak self] in self?.onDictationReleased?() } : nil)
+    }
+
+    /// Re-reads which actions are enabled, after a feature or category switch moved.
+    func refreshRegistrations() {
+        for action in candidateActions {
+            center.unregister(id: action.defaultsKey)
+            register(action)
+        }
+        syncModifierTaps()
+        if secureInputEquivalentsIncludeShift != nil { syncSecureInputEquivalents() }
     }
 
     /// Rebuilt wholesale, so the map can't drift from what is on disk.
@@ -409,6 +423,7 @@ final class HotKeyManager {
         for action in candidateActions {
             guard let binding = binding(for: action), binding.usesModifierTapMonitor else { continue }
             if action == .dictation, !dictationEnabled { continue }
+            if allowsAction?(action) == false { continue }
             if action == .dictation, dictationHoldToTalk {
                 guard holdKey != nil, conflictOwner(of: binding, excluding: action) == nil else {
                     continue

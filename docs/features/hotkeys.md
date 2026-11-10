@@ -27,6 +27,10 @@ return `OSStatus` synchronously, preserving event order and hold-to-talk release
   is parameterised over the whole catalog and dispatches through `LauncherCoordinator.runCommand`, so a
   new built-in command arrives bindable with no hotkey plumbing of its own, and there is one behaviour
   per command rather than one per invocation route.
+- **A disabled action holds no global shortcut.** `register` asks `allowsAction` (the category,
+  feature and Dictation switches), so a disabled command's combo reaches other apps while its stored
+  binding stays put. `refreshRegistrations()` re-syncs when `AppIndex.hiddenCommands`, the disabled
+  kinds or `dictationEnabled` move, and a disabled action does not count in `conflictOwner`.
 - **A command that opens a palette mode toggles it.** Every one of them enters through
   `PaletteCoordinator.togglePalette(mode:)`, so a second press closes what the first opened. From a
   launcher row the palette is in `.launcher`, so the row always re-points instead.

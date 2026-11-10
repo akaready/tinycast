@@ -388,7 +388,7 @@ final class AppIndex {
     private var extensionEntries: [AppEntry] = []
     private var meetingEntries: [AppEntry] = []
     /// The catalog's commands a disabled feature hides; the Commands slice is recomputed from it.
-    private var hiddenCommands: Set<CommandID> = []
+    private(set) var hiddenCommands: Set<CommandID> = []
     /// Kept out of launcher search by a "Show in launcher" switch, yet still runnable by shortcut.
     private var unlistedCommands: Set<CommandID> = []
     private var nameCache = BundleNameCache()

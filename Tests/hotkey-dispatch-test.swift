@@ -14,8 +14,42 @@ struct HotKeyDispatchTest {
 
     static func main() {
         for includesShift in [false, true] { dispatch(includesShift: includesShift) }
+        disabledActions()
         print("\(checks) dispatch checks; \(failures) failures")
         if failures > 0 { exit(1) }
+    }
+
+    /// A disabled action keeps its stored binding but holds no combo, and neither blocks a conflict.
+    static func disabledActions() {
+        let domain = "tinycast.hotkey-disabled-test.\(UUID())"
+        let defaults = UserDefaults(suiteName: domain)!
+        defer { defaults.removePersistentDomain(forName: domain) }
+        let manager = HotKeyManager(defaults: defaults)
+        let center = HotKeyCenter.current!
+        var enabled = false
+        manager.allowsAction = { $0 != .command(.sample) || enabled }
+        let action = HotKeyAction.command(.sample)
+        let other = HotKeyAction.togglePalette
+        let shortcut = KeyShortcut(
+            carbonKeyCode: kVK_ANSI_V, carbonModifiers: controlKey | optionKey | cmdKey)
+        let binding = HotKeyBinding.combo(shortcut)
+        manager.setBinding(binding, for: action)
+        check("a disabled action keeps its binding", manager.binding(for: action) == binding)
+        check(
+            "a disabled action holds no combo", center.entries[action.defaultsKey] == nil)
+        check(
+            "a disabled action's combo is free for another",
+            manager.conflictOwner(of: binding, excluding: other) == nil)
+        enabled = true
+        manager.refreshRegistrations()
+        check("enabling registers the stored binding", center.entries[action.defaultsKey] != nil)
+        check(
+            "an enabled action's combo conflicts",
+            manager.conflictOwner(of: binding, excluding: other) != nil)
+        enabled = false
+        manager.refreshRegistrations()
+        check("disabling unregisters it", center.entries[action.defaultsKey] == nil)
+        check("disabling keeps the binding", manager.binding(for: action) == binding)
     }
 
     static func dispatch(includesShift: Bool) {

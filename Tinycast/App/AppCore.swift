@@ -427,6 +427,8 @@ final class AppCore {
             SystemActionRunner.onAsyncFailure = { [weak self] id, failure in
                 self?.systemActionCoordinator.presentSystemActionFailure(id: id, failure: failure)
             }
+            // Before `hotKeys.start`, so a presence change later in launch still re-syncs.
+            observeHotKeyAvailability()
             hotKeys.start(
                 customCommandIDs: Set(customCommands.commands.map(\.id)),
                 quicklinkIDs: Set(quicklinks.quicklinks.map(\.id)),
@@ -683,6 +685,12 @@ final class AppCore {
     }
 
     // MARK: - Feature switches
+
+    /// A disabled command holds no global shortcut; its stored binding returns when it is back.
+    private func observeHotKeyAvailability() {
+        track(appIndex, { _ = $0.hiddenCommands }, reproject: { $0.hotKeys.refreshRegistrations() })
+        track(visibility, { _ = $0.disabledKinds }, reproject: { $0.hotKeys.refreshRegistrations() })
+    }
 
     private func observeFeatureSwitches() {
         track(
