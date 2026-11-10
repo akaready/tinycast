@@ -88,7 +88,7 @@ fire in one update agree whatever order they run in. `onAppear` lands as well: t
 the view after `prepare` has run, so no change handler ever sees that reset. The landing is row 0 on
 every screen but three: the clipboard lands past its pins
 ([clipboard.md](clipboard.md#pinned-entries)), Search Quicklinks lands on the row a prompt names
-([quicklinks.md](quicklinks.md)), and the Store lands past its Install from GitHub row, which builds
+([quicklinks.md](quicklinks.md)), and the Store lands past its Install from GitHub and Update All rows, which build or update
 code ([extensions.md](extensions.md#the-store)).
 
 | Mode                   | Screen                      | Inner list                                                                                               |

@@ -31,12 +31,16 @@ struct ExtensionStoreView: View {
                 HStack(spacing: 0) {
                     list.frame(width: metrics.size.clipboardListWidth)
                     Rectangle().fill(Theme.Colors.separator).frame(width: Theme.Size.hairline)
-                    ExtensionStoreDetailPane(
-                        entry: selected, state: selected.map(session.state(for:)),
-                        detail: selected.flatMap { session.details[$0.key] },
-                        readme: selected.flatMap { session.readmes[$0.key] },
-                        failure: selected.flatMap { session.failures[$0.id] },
-                        onCategory: onCategory)
+                    if selected?.kind == .updates {
+                        ExtensionStoreUpdatesSummary(session: session)
+                    } else {
+                        ExtensionStoreDetailPane(
+                            entry: selected, state: selected.map(session.state(for:)),
+                            detail: selected.flatMap { session.details[$0.key] },
+                            readme: selected.flatMap { session.readmes[$0.key] },
+                            failure: selected.flatMap { session.failures[$0.id] },
+                            onCategory: onCategory)
+                    }
                 }
             }
         }
@@ -87,16 +91,21 @@ struct ExtensionStoreView: View {
 
     // MARK: - List
 
+    @ViewBuilder
+    private func rowView(_ entry: Entry, selected: Bool) -> some View {
+        if entry.kind == .updates {
+            ExtensionStoreUpdatesRow(session: session, selected: selected)
+        } else {
+            ExtensionStoreRow(entry: entry, state: session.state(for: entry), selected: selected)
+        }
+    }
+
     private var list: some View {
         ScrollViewReader { proxy in
             ScrollView {
                 LazyVStack(spacing: 0) {
-                    if session.pendingUpdateCount > 0 { ExtensionStoreUpdatesBanner(session: session) }
                     ForEach(Array(rows.enumerated()), id: \.element.id) { index, entry in
-                        ExtensionStoreRow(
-                            entry: entry, state: session.state(for: entry),
-                            selected: index == selection
-                        )
+                        rowView(entry, selected: index == selection)
                         .contentShape(Rectangle())
                         .onRightClick { onActions(index) }
                         .onRowClick(
@@ -108,6 +117,9 @@ struct ExtensionStoreView: View {
                         )
                         .selectionFrame(index == selection)
                         .onAppear { session.loadNextPageIfNeeded(nearIndex: index) }
+                    }
+                    if !rows.contains(where: { $0.kind == .store }) {
+                        emptyState.frame(height: metrics.scaled(180))
                     }
                     if session.isLoadingMore {
                         ProgressView().controlSize(.small)
@@ -190,28 +202,30 @@ private struct ExtensionStoreRow: View {
     }
 }
 
-/// Not a row: ↑/↓ never land on it, so ↵ can't update everything by accident.
-private struct ExtensionStoreUpdatesBanner: View {
+/// Update All as a row, so ↑/↓ reach it and ↵ or a double click runs it.
+private struct ExtensionStoreUpdatesRow: View {
     @Environment(\.metrics) private var metrics
     let session: ExtensionStoreSession
+    let selected: Bool
+    @State private var hovered = false
+
+    private var fill: Color {
+        if selected { return Theme.Colors.selection }
+        if hovered { return Theme.Colors.rowHover }
+        return .clear
+    }
 
     var body: some View {
         VStack(alignment: .leading, spacing: metrics.spacing.xs) {
             HStack(spacing: metrics.spacing.lg) {
                 Image(systemName: "arrow.down.circle")
                     .foregroundStyle(Theme.Colors.primaryAction)
+                    .frame(width: metrics.size.resultRowIcon)
                 Text("\(session.pendingUpdateCount) updates available")
-                    .font(metrics.typography.rowTrailing)
+                    .font(metrics.typography.rowTitle)
                     .lineLimit(1)
                 Spacer(minLength: metrics.spacing.sm)
-                if session.isUpdating {
-                    ProgressView().controlSize(.small)
-                } else {
-                    Button("Update All") { session.updateAll() }
-                        .buttonStyle(.plain)
-                        .font(metrics.typography.bar)
-                        .foregroundStyle(Theme.Colors.primaryAction)
-                }
+                if session.isUpdating { ProgressView().controlSize(.small) }
             }
             if let error = session.updateError {
                 Text(error)
@@ -222,10 +236,39 @@ private struct ExtensionStoreUpdatesBanner: View {
         .padding(.horizontal, metrics.spacing.md)
         .padding(.vertical, metrics.spacing.sm)
         .background(
-            RoundedRectangle(cornerRadius: metrics.radius.row, style: .continuous)
-                .fill(Theme.Colors.cardFill)
+            RoundedRectangle(cornerRadius: metrics.radius.row, style: .continuous).fill(fill)
         )
-        .padding(.bottom, metrics.spacing.xs)
+        .armedHover($hovered)
+    }
+}
+
+/// The pane beside the Update All row: what it would update.
+private struct ExtensionStoreUpdatesSummary: View {
+    @Environment(\.metrics) private var metrics
+    let session: ExtensionStoreSession
+
+    var body: some View {
+        ScrollView {
+            VStack(alignment: .leading, spacing: metrics.spacing.md) {
+                Text("\(session.pendingUpdateCount) updates available")
+                    .font(metrics.typography.panelTitle)
+                ForEach(session.pendingUpdateTitles, id: \.self) { title in
+                    Text(title).font(metrics.typography.rowTitle)
+                }
+                if let error = session.updateError {
+                    Text(error)
+                        .font(metrics.typography.rowTrailing)
+                        .foregroundStyle(.orange)
+                }
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .padding(.horizontal, metrics.spacing.xl)
+            .padding(.vertical, metrics.spacing.md)
+            .hideNativeScrollers()
+        }
+        .frame(maxWidth: .infinity)
+        .edgeDissolve()
+        .thinScrollbar()
     }
 }
 

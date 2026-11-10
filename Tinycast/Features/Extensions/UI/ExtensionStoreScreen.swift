@@ -31,10 +31,9 @@ struct ExtensionStoreScreen: PaletteScreen {
     /// With no row to act on, the pill still checks for updates, so ⌘K never has nothing to open.
     var actsWithoutRows: Bool { true }
 
-    /// Row 0 may be the GitHub pseudo-row, which builds code, so the highlight lands past it.
+    /// The pseudo-rows build code or update everything, so the highlight lands past them.
     var landingSelection: Int {
-        guard case .github? = rows.first?.kind, rows.count > 1 else { return 0 }
-        return 1
+        rows.firstIndex { $0.kind == .store } ?? 0
     }
 
     var primaryActionTitle: String {
@@ -42,6 +41,9 @@ struct ExtensionStoreScreen: PaletteScreen {
             return String(localized: "Check for Updates")
         }
         if case .github = entry.kind { return String(localized: "Install from GitHub") }
+        if case .updates = entry.kind {
+            return session.isUpdating ? String(localized: "Updating…") : String(localized: "Update All")
+        }
         switch session.state(for: entry) {
         case .available:
             return entry.raycastCopy == nil ? String(localized: "Install") : String(localized: "Import")
@@ -57,6 +59,7 @@ struct ExtensionStoreScreen: PaletteScreen {
     func isPrimaryActionEnabled(at selection: Int) -> Bool {
         guard let entry = entry(at: selection) else { return !session.isChecking }
         if case .github = entry.kind { return true }
+        if case .updates = entry.kind { return !session.isUpdating }
         switch session.state(for: entry) {
         case .available: return entry.listing != nil || entry.raycastCopy != nil
         case .installed, .updateAvailable: return true
@@ -70,6 +73,7 @@ struct ExtensionStoreScreen: PaletteScreen {
         if case .github(let source) = entry.kind {
             return core.extensionCoordinator.confirmInstallFromGitHub(source)
         }
+        if case .updates = entry.kind { return session.updateAll() }
         switch session.state(for: entry) {
         case .available:
             if let copy = entry.raycastCopy { session.importFromRaycast([copy]) } else { session.install(entry) }
@@ -117,6 +121,7 @@ struct ExtensionStoreScreen: PaletteScreen {
     }
 
     private func entryItems(_ entry: Entry) -> [PopoverMenuItem] {
+        if case .updates = entry.kind { return [] }
         if case .github(let source) = entry.kind {
             return [
                 PopoverMenuItem(

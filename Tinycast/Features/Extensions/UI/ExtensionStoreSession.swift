@@ -55,6 +55,8 @@ final class ExtensionStoreSession {
             case store
             /// A pseudo-row for a typed GitHub address, ahead of whatever the store found.
             case github(ExtensionGitHubSource)
+            /// A pseudo-row that runs Update All, after the GitHub one.
+            case updates
         }
 
         let listing: ExtensionListing?
@@ -69,11 +71,13 @@ final class ExtensionStoreSession {
             if case .github(let source) = kind {
                 return "github:\(source.owner)/\(source.repository)/\(source.path)@\(source.ref)"
             }
+            if case .updates = kind { return "store:updates" }
             return listing?.name ?? local?.manifest.name ?? ""
         }
 
         var title: String {
             if case .github = kind { return String(localized: "Install from GitHub") }
+            if case .updates = kind { return String(localized: "Update All") }
             return listing?.title ?? local?.title ?? id
         }
 
@@ -94,6 +98,7 @@ final class ExtensionStoreSession {
 
         var handle: String? {
             if case .github = kind { return nil }
+            if case .updates = kind { return nil }
             return listing?.storeHandle ?? local?.manifest.storeHandle
         }
 
@@ -204,10 +209,20 @@ final class ExtensionStoreSession {
 
     // MARK: - Rows
 
-    var entries: [Entry] {
+    /// Rows that are not extensions, ahead of all of them: the typed GitHub address, then Update All.
+    private var leadingEntries: [Entry] {
+        var leading: [Entry] = []
+        if let githubEntry { leading.append(githubEntry) }
+        if pendingUpdateCount > 0 { leading.append(Entry(listing: nil, installed: nil, kind: .updates)) }
+        return leading
+    }
+
+    var entries: [Entry] { leadingEntries + extensionEntries }
+
+    private var extensionEntries: [Entry] {
         switch filter {
         case .all:
-            return (githubEntry.map { [$0] } ?? []) + listings.map { Entry(listing: $0, installed: nil) }
+            return listings.map { Entry(listing: $0, installed: nil) }
         case .installed:
             let known = Dictionary(listings.map { ($0.name, $0) }, uniquingKeysWith: { first, _ in first })
                 .merging(extensions.updates) { _, update in update }
@@ -226,7 +241,8 @@ final class ExtensionStoreSession {
     }
 
     private var githubEntry: Entry? {
-        ExtensionGitHubSource(query).map { Entry(listing: nil, installed: nil, kind: .github($0)) }
+        guard filter == .all else { return nil }
+        return ExtensionGitHubSource(query).map { Entry(listing: nil, installed: nil, kind: .github($0)) }
     }
 
     private static func byTitle(_ lhs: Entry, _ rhs: Entry) -> Bool {
@@ -296,7 +312,7 @@ final class ExtensionStoreSession {
 
     /// Called with the highlighted or an appearing row, so a page loads as the list nears its end.
     func loadNextPageIfNeeded(nearIndex: Int) {
-        let row = nearIndex - (githubEntry == nil ? 0 : 1)
+        let row = nearIndex - leadingEntries.count
         guard filter == .all, phase == .loaded, hasMore, !isLoadingMore, !moreFailed,
             row >= listings.count - Self.pageLookahead
         else { return }
@@ -476,6 +492,12 @@ final class ExtensionStoreSession {
     }
 
     var pendingUpdateCount: Int { extensions.updates.count }
+
+    var pendingUpdateTitles: [String] {
+        extensions.updates.values.map(\.title).sorted {
+            $0.localizedStandardCompare($1) == .orderedAscending
+        }
+    }
     var isUpdating: Bool { !extensions.updating.isEmpty }
 
     func updateAll() {
