@@ -12,9 +12,6 @@ struct ExtensionStoreScreen: PaletteScreen {
     let openArgumentOptions: (String) -> Void
 
     static let filterField = "filter"
-    private static let filterWidth: CGFloat = 176
-
-    private var metrics: InterfaceMetrics { core.settings.interfaceSize.metrics }
 
     var rows: [Entry] { session.entries }
 
@@ -267,9 +264,9 @@ struct ExtensionStoreScreen: PaletteScreen {
         at selection: Int, focus: FocusState<String?>.Binding
     ) -> PaletteHeaderAccessory? {
         PaletteHeaderAccessory(
-            width: metrics.scaled(Self.filterWidth), fieldNames: [], firstIncompleteField: nil,
+            width: 0, fieldNames: [], firstIncompleteField: nil,
             optionsMenu: { field in field == Self.filterField ? filterMenu : nil },
-            placement: .besideSearchField,
+            placement: .trailing,
             view: AnyView(
                 HeaderMenuButton(
                     title: session.category.map(ExtensionStoreSession.title(ofCategory:))
