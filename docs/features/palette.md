@@ -99,6 +99,7 @@ code ([extensions.md](extensions.md#the-store)).
 | `.emoji`               | `EmojiScreen`               | `EmojiGridView`                                                                                          |
 | `.fileSearch`          | `FileSearchScreen`          | `FileSearchList` (see [file-search.md](file-search.md))                                                  |
 | `.schedule`            | `ScheduleScreen`            | `ScheduleList` (see [calendar.md](calendar.md))                                                          |
+| `.contacts`            | `ContactsScreen`            | `ContactsView` (see [contacts.md](contacts.md))                                                          |
 | `.eventEditor`         | `EventEditorScreen`         | `EventEditorView` (see [calendar.md](calendar.md#create-event))                                          |
 | `.customCommandEditor` | `CustomCommandEditorScreen` | `CustomCommandEditorView` (see [custom-commands.md](custom-commands.md#launcher-editor))                 |
 | `.customCommands`      | `CustomCommandListScreen`   | `CustomCommandList` + script preview (see [custom-commands.md](custom-commands.md#launcher-integration)) |

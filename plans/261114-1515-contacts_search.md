@@ -1,9 +1,28 @@
 ---
-status: planned
+status: in-progress
 plan_date: 2026-11-14
 ---
 
 # Contacts search: a launcher command (fork-only)
+
+## Outcome — in progress, 2026-11-14
+
+**Landed:** a fork-only "Search Contacts" command behind an opt-in `contactsEnabled` setting (Tinycast
+dialog, then the macOS prompt, flag written only after a grant; excluded from backups). It opens a
+palette screen with search, a list, and a detail pane (phones, emails, addresses, birthday, photo).
+Actions: copy name (⌘↵), copy phone/email/address, email, message, FaceTime, open in Contacts.app
+(↵). Plumbing: addressbook entitlement, `NSContactsUsageDescription`, `Permissions.contactsAccess()`,
+a Contacts row in the Permissions pane, a Contacts settings pane, and `docs/features/contacts.md`.
+All strings are translated into the eight shipped languages.
+**Verified:** `Scripts/run-tests.sh` (114 harnesses, including the new `contacts-test`),
+`Scripts/lint.sh` (clean), the purity grep (empty), and an unsigned Debug build with no new warnings.
+**Not verified:** never run on screen. The macOS permission prompt, a real address book's results,
+photos, `addressbook://` opening the right card, and the tel/sms/facetime/mailto hand-offs are untested.
+**Deviated:** multiple values are flat rows in the ⌘K menu (one per number or address, each showing
+its label and value) rather than a labelled submenu, since the palette menu has no submenus. The
+search-field text is not matched against company or email: it is the system name predicate only.
+**Left undone:** a manual pass of the sweep in `docs/testing.md`; install into /Applications (needs the
+user at the keyboard for codesign); the status flips to `shipped` once it is seen working and merged.
 
 ## Context
 
