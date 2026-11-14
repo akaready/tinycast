@@ -495,6 +495,11 @@ final class AppSettings {
         didSet { defaults.set(calendarEnabled, forKey: Key.calendarEnabled.rawValue) }
     }
 
+    /// Doubles as contacts-access consent, so only `ContactsCoordinator` may write it.
+    var contactsEnabled: Bool {
+        didSet { defaults.set(contactsEnabled, forKey: Key.contactsEnabled.rawValue) }
+    }
+
     var calendarShowInLauncher: Bool {
         didSet {
             defaults.set(calendarShowInLauncher, forKey: Key.calendarShowInLauncher.rawValue)
@@ -845,6 +850,7 @@ final class AppSettings {
             defaults.stringArray(forKey: Key.extensionCustomSearchPaths.rawValue) ?? []
         // Opt-in, like extensions: until it is asked for, EventKit is never loaded.
         calendarEnabled = defaults.bool(forKey: Key.calendarEnabled.rawValue)
+        contactsEnabled = defaults.bool(forKey: Key.contactsEnabled.rawValue)
         calendarShowInLauncher =
             defaults.object(forKey: Key.calendarShowInLauncher.rawValue) == nil
             || defaults.bool(forKey: Key.calendarShowInLauncher.rawValue)

@@ -73,6 +73,8 @@
 	<string>Tinycast records audio only while you use Dictation, to transcribe it on your Mac.</string>
 	<key>NSCalendarsFullAccessUsageDescription</key>
 	<string>Tinycast accesses your events to show your schedule and let you join meetings.</string>
+	<key>NSContactsUsageDescription</key>
+	<string>Tinycast reads your contacts so you can search them and reach people from the launcher.</string>
 	<key>NSRemindersFullAccessUsageDescription</key>
 	<string>Tinycast lets extensions you run read and edit your reminders.</string>
 	<key>NSBluetoothAlwaysUsageDescription</key>
