@@ -491,6 +491,21 @@ export default function Command() {
 
 // Bundled HTTP clients (axios) construct and probe a Response at module scope, before any component
 // mounts — a host-shaped constructor took the whole command down with them.
+const structuredCloneSource = `
+export default async function Command() {
+  const source = { re: /a+b/gi, when: new Date(5), list: new Set([1]), map: new Map([["k", { n: 2 }]]) };
+  source.self = source;
+  const copy = structuredClone(source);
+  globalThis.__clone = {
+    regexp: copy.re instanceof RegExp && copy.re !== source.re && copy.re.test("xAAb") && copy.re.flags,
+    date: copy.when instanceof Date && copy.when.getTime(),
+    set: copy.list instanceof Set && copy.list !== source.list && [...copy.list],
+    map: copy.map instanceof Map && copy.map.get("k") !== source.map.get("k") && copy.map.get("k").n,
+    cycle: copy.self === copy,
+  };
+}
+`;
+
 const responseSource = `
 export default async function Command() {
   const probe = new Response();
@@ -1254,6 +1269,15 @@ export async function runFixtures() {
     check("slices Blob data and accepts it as a Response body", equals(result.slice, [3, "application/test", "ell", "hello!"]), JSON.stringify(result.slice));
     check("creates a typed Blob from Response.blob", equals(result.responseBlob, [2, "text/custom", "hi"]), JSON.stringify(result.responseBlob));
     check("DOMException is an Error carrying its name", equals(result.domException, ["AbortError", "stopped", true, true, "Error"]), JSON.stringify(result.domException));
+  });
+
+  await run("structuredClone keeps regular expressions and collections", structuredCloneSource, "no-view", async (harness) => {
+    const result = harness.call("globalThis.__clone");
+    check("clones a callable RegExp", result?.regexp === "gi", JSON.stringify(result));
+    check("clones a Date", result?.date === 5, JSON.stringify(result));
+    check("clones a Set", JSON.stringify(result?.set) === "[1]", JSON.stringify(result));
+    check("clones a Map deeply", result?.map === 2, JSON.stringify(result));
+    check("keeps a cycle", result?.cycle === true, JSON.stringify(result));
   });
 
   const sentTypes = [];

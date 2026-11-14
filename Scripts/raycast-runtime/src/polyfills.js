@@ -774,8 +774,39 @@ if (!g.btoa) {
   };
 }
 
+// Bundled deps clone regular expressions and keep the clone callable (function-timeout does).
+function cloneValue(value, seen) {
+  if (value === null || typeof value !== "object") return value;
+  if (seen.has(value)) return seen.get(value);
+  let copy;
+  if (value instanceof Date) return new Date(value.getTime());
+  if (value instanceof RegExp) {
+    copy = new RegExp(value.source, value.flags);
+    copy.lastIndex = value.lastIndex;
+    return copy;
+  }
+  if (value instanceof ArrayBuffer) return value.slice(0);
+  if (ArrayBuffer.isView(value)) return new value.constructor(value);
+  if (value instanceof Map) {
+    copy = new Map();
+    seen.set(value, copy);
+    value.forEach((entry, key) => copy.set(cloneValue(key, seen), cloneValue(entry, seen)));
+    return copy;
+  }
+  if (value instanceof Set) {
+    copy = new Set();
+    seen.set(value, copy);
+    value.forEach((entry) => copy.add(cloneValue(entry, seen)));
+    return copy;
+  }
+  copy = Array.isArray(value) ? [] : {};
+  seen.set(value, copy);
+  for (const key of Object.keys(value)) copy[key] = cloneValue(value[key], seen);
+  return copy;
+}
+
 if (!g.structuredClone) {
-  g.structuredClone = (value) => (value === undefined ? undefined : JSON.parse(JSON.stringify(value)));
+  g.structuredClone = (value) => cloneValue(value, new Map());
 }
 
 // JavaScriptCore has no TextEncoder/TextDecoder (they're WebCore APIs), and bundled deps reach for
