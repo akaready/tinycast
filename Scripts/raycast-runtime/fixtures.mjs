@@ -379,6 +379,38 @@ module.exports.default = () => {
 };
 `;
 
+const vmSource = `
+const vm = require("vm");
+const script = new vm.Script("returnValue = functionToRun()");
+function functionTimeout(fn, { timeout, context = vm.createContext() } = {}) {
+  return (...args) => {
+    context.functionToRun = () => fn(...args);
+    script.runInNewContext(context, { timeout });
+    return context.returnValue;
+  };
+}
+
+module.exports.default = () => {
+  const sandbox = {};
+  vm.runInNewContext("x = 1; y = x + 1", sandbox);
+  const probe = {};
+  vm.runInNewContext("self = this; m = Math.max(1, 5); j = JSON.stringify([1])", probe);
+  globalThis.__vm = {
+    timeout: functionTimeout((a, b) => a + b, { timeout: 100 })(2, 3),
+    y: sandbox.y,
+    leaked: "x" in globalThis || "y" in globalThis || "returnValue" in globalThis,
+    thisIsSandbox: probe.self === probe,
+    max: probe.m,
+    json: probe.j,
+    thisContext: vm.runInThisContext("1 + 2"),
+    isContext: vm.isContext(vm.createContext({})) && !vm.isContext({}),
+    compiled: vm.compileFunction("return a + b", ["a", "b"])(2, 3),
+    extension: vm.compileFunction("return k * 2", [], { contextExtensions: [{ k: 4 }] })(),
+    options: new vm.Script("7", { filename: "a.js", displayErrors: false }).runInThisContext({ timeout: 5, breakOnSigint: true }),
+  };
+};
+`;
+
 const onceSource = `
 const { EventEmitter } = require("events");
 
@@ -792,7 +824,7 @@ export default async function Command() {
 
 const namespaceImportSource = `
 import * as net from "node:net";
-import * as vm from "node:vm";
+import * as readline from "node:readline";
 import { AsyncResource } from "node:async_hooks";
 import { Socket } from "node:net";
 
@@ -820,9 +852,9 @@ export default async function Command() {
   };
   const tracked = new Tracked();
   globalThis.__namespaceImport = {
-    kinds: [typeof net.Socket, typeof Socket, typeof vm.Script, typeof AsyncResource],
+    kinds: [typeof net.Socket, typeof Socket, typeof readline.Interface, typeof AsyncResource],
     keys: Object.keys(net).filter((key) => key !== "default"),
-    refusals: [refusal(() => new net.Socket()), refusal(() => vm.runInNewContext("1"))],
+    refusals: [refusal(() => new net.Socket()), refusal(() => readline.createInterface({}))],
     scope: [tracked.record("a"), tracked.record("b"), tracked.seen.join("")],
     type: tracked.type,
   };
@@ -1081,6 +1113,19 @@ export async function runFixtures() {
     check("a base32 secret decodes to its key", result?.key === "12345678901234567890", JSON.stringify(result?.key));
     check("each secret gets its own RFC 4226 code", JSON.stringify(result?.codes) === '["755224","287082","282760"]', JSON.stringify(result?.codes));
     check("an empty HMAC key is still an HMAC", result?.emptyKey === "b613679a0814d9ec772f95d778c35fc5ff1697c493715653c6c712144292c5ad", result?.emptyKey);
+  });
+
+  await run("vm module", vmSource, "no-view", async (harness) => {
+    const result = harness.call("globalThis.__vm");
+    check("function-timeout's pattern returns the function's value", result?.timeout === 5, harness.state.failures.join(" | "));
+    check("runInNewContext writes land on the sandbox", result?.y === 2);
+    check("nothing leaks to the real global", result?.leaked === false);
+    check("this is the sandbox", result?.thisIsSandbox === true);
+    check("built-ins stay reachable", result?.max === 5 && result?.json === "[1]");
+    check("runInThisContext evaluates at global scope", result?.thisContext === 3);
+    check("isContext recognises created contexts", result?.isContext === true);
+    check("compileFunction binds parameters and extensions", result?.compiled === 5 && result?.extension === 8);
+    check("unenforceable options are accepted", result?.options === 7);
   });
 
   await run("EventEmitter.once preserves the emitter receiver", onceSource, "no-view", async (harness) => {
@@ -1457,7 +1502,7 @@ export async function runFixtures() {
     check("every member survives the own-key snapshot", kinds === JSON.stringify(["function", "function", "function", "function"]), kinds);
     check("net enumerates its exports", result?.keys?.includes("Socket") && result.keys.includes("createConnection"), JSON.stringify(result?.keys));
     check("an unsupported member still refuses by name", result?.refusals?.[0]?.startsWith("net.Socket is not supported"), JSON.stringify(result?.refusals));
-    check("a refusal names the member that was called", result?.refusals?.[1]?.startsWith("vm.runInNewContext is not supported"), JSON.stringify(result?.refusals));
+    check("a refusal names the member that was called", result?.refusals?.[1]?.startsWith("readline.createInterface is not supported"), JSON.stringify(result?.refusals));
     check("AsyncResource runs the callback in place", JSON.stringify(result?.scope) === JSON.stringify([1, 2, "ab"]), JSON.stringify(result?.scope));
     check("AsyncResource keeps its type", result?.type === "tracked", String(result?.type));
   });

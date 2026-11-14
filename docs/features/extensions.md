@@ -785,7 +785,7 @@ more — CryptoKit's limits, narrower than Node's — random, UUID), `zlib` (gzi
 directions, plus `create*` streams that buffer until `end`), `http`/`https` (`request`, `get` and `Agent`, buffered over the same URLSession bridge
 as `fetch`, with `socketPath` for Unix-socket HTTP), `stream` (`Readable`, `Writable`, `Duplex`, `Transform`, `PassThrough`, `pipeline`,
 `finished`, plus `stream/promises` and `stream/web`), `util`, `events`, `buffer`, `url`, `querystring`, `punycode`, `assert`,
-`string_decoder`, `timers`. Every other built-in resolves to a stub that throws only when used, so a
+`string_decoder`, `timers`, `vm`. Every other built-in resolves to a stub that throws only when used, so a
 bundle that merely references `http2` or `domain` still loads. Those stubs are manufactured lazily,
 but each module still has to enumerate its members as own keys: esbuild's `__toESM` — what every
 namespace or named import compiles to — snapshots own keys instead of reading through the proxy, and
@@ -803,6 +803,13 @@ and removes the listener before invoking it; bundled duplex streams rely on that
 read the string as a length, so `thirty-two`, the base32 decoder inside otplib, turned every TOTP
 secret into an empty key and Proton Authenticator showed one code for all accounts. `createHmac` with
 an empty key stays an HMAC rather than becoming a plain hash.
+
+`vm` runs code against a sandbox object as its global scope (a sloppy `with` over a proxy of it), which is
+enough for sindresorhus's `function-timeout` that the EXIF extension bundles. There is no separate realm,
+so built-ins are the runtime's own. A script's top-level `var` and function declarations do not become
+context properties, and reading an undefined name yields `undefined` rather than a `ReferenceError`.
+`timeout`, `filename` and the other options are accepted and ignored: JavaScriptCore's public API has no
+execution limit, so runaway code in a context is not interrupted.
 
 **WebAssembly** — `compile`, `instantiate` and their streaming forms run through the synchronous
 `Module` and `Instance` constructors. JavaScriptCore settles the promise forms from a run-loop timer on

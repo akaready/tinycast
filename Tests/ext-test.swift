@@ -1837,6 +1837,26 @@ struct ExtensionTests {
                 """
             ),
             (
+                "vm-module",
+                """
+                  const vm = require("vm");
+                  const script = new vm.Script("returnValue = functionToRun()");
+                  const context = vm.createContext();
+                  context.functionToRun = () => 2 + 3;
+                  script.runInNewContext(context, { timeout: 100 });
+                  assert.equal(context.returnValue, 5);
+                  const sandbox = {};
+                  vm.runInNewContext("x = 1; y = x + 1; self = this; m = Math.max(1, 5)", sandbox);
+                  assert.equal(sandbox.y, 2);
+                  assert(sandbox.self === sandbox);
+                  assert.equal(sandbox.m, 5);
+                  assert(!("x" in globalThis) && !("returnValue" in globalThis));
+                  assert.equal(vm.runInThisContext("1 + 2"), 3);
+                  assert(vm.isContext(vm.createContext({})) && !vm.isContext({}));
+                  assert.equal(vm.compileFunction("return a + b", ["a", "b"])(2, 3), 5);
+                """
+            ),
+            (
                 "once-receiver",
                 """
                   const { EventEmitter } = require("events");
