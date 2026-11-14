@@ -90,6 +90,7 @@
 		18F2636E6E075309FEDDC48B /* PlainTextSurface.swift in Sources */ = {isa = PBXBuildFile; fileRef = 322CDA010EDCE32555CD4212 /* PlainTextSurface.swift */; };
 		19317D6C8A55E3F85BB7AE1F /* OnboardingState.swift in Sources */ = {isa = PBXBuildFile; fileRef = 02BCAB1F3B6930FE0B819F6D /* OnboardingState.swift */; };
 		195465DB2A155EDD8C0809BA /* MCPOAuthChallenge.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3265CBD6C91FC67E3996AF8E /* MCPOAuthChallenge.swift */; };
+		198F77E7650DBE089F90B030 /* ExtensionClipboardPayload.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3F820ECFE9FDDE688D53C4C6 /* ExtensionClipboardPayload.swift */; };
 		19F36636F27933FA8278642A /* AITool.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4FBE70702D22F894C6B1A790 /* AITool.swift */; };
 		1A4283A863BE56A7BC43D9F7 /* ColorSwatch.swift in Sources */ = {isa = PBXBuildFile; fileRef = 89DBFE62B513EC161F194D0A /* ColorSwatch.swift */; };
 		1A7F214D77D831C7A223631E /* QuickActionResultView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 31F2C83F4B985EA6CD03BC69 /* QuickActionResultView.swift */; };
@@ -1169,6 +1170,7 @@
 		3E16AEF81320A101E384098E /* KeyShortcut.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KeyShortcut.swift; sourceTree = "<group>"; };
 		3E4A7E45F7D1CC5FB8868715 /* SearchScopes.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SearchScopes.swift; sourceTree = "<group>"; };
 		3E81B4C409EBB4D3D0DECD47 /* CalcGrowth.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CalcGrowth.swift; sourceTree = "<group>"; };
+		3F820ECFE9FDDE688D53C4C6 /* ExtensionClipboardPayload.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ExtensionClipboardPayload.swift; sourceTree = "<group>"; };
 		3FCA6A3F125163DD10E56564 /* ChatCitations.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChatCitations.swift; sourceTree = "<group>"; };
 		3FD57D9B2C6C46B5ADDDE173 /* MCPHTTPTransport.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MCPHTTPTransport.swift; sourceTree = "<group>"; };
 		3FE591549F24AE554C13CD0C /* FavoriteSlots.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FavoriteSlots.swift; sourceTree = "<group>"; };
@@ -3631,6 +3633,7 @@
 				1AA26F487C06DC6F03F78B13 /* ExtensionAppearanceStore.swift */,
 				A7DDDF0D150C30D0D0FC0BFD /* ExtensionCatalog.swift */,
 				87F282D4BBC2F147D3A98FFB /* ExtensionCleanup.swift */,
+				3F820ECFE9FDDE688D53C4C6 /* ExtensionClipboardPayload.swift */,
 				BD4C0743DE901F5E248991B4 /* ExtensionCommandMetadataStore.swift */,
 				988EA3698EA86BA53590C24E /* ExtensionFetcher.swift */,
 				38765BC6C35D03659655BD2B /* ExtensionHostBridge.swift */,
@@ -4464,6 +4467,7 @@
 				90167E291A8F08419B0D5517 /* ExtensionCaret.swift in Sources */,
 				32238C3CCA0310804D30506A /* ExtensionCatalog.swift in Sources */,
 				4D3E47D6F382933EB3B1AB2F /* ExtensionCleanup.swift in Sources */,
+				198F77E7650DBE089F90B030 /* ExtensionClipboardPayload.swift in Sources */,
 				4DA03A170E95F0D08E3569F9 /* ExtensionColors.swift in Sources */,
 				D023C469FB541A7175AACA3B /* ExtensionCommandMetadata.swift in Sources */,
 				C1FC3507BFC408DCD7F142D8 /* ExtensionCommandMetadataStore.swift in Sources */,
