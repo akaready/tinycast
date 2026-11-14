@@ -1,6 +1,4 @@
-// `vm` without a second realm: a context is the sandbox object itself, and code runs in a sloppy
-// `with` over a Proxy of it, so bare names resolve against the sandbox and writes land on it.
-// No timeout can be enforced because JavaScriptCore's public API has no execution limit.
+// No second realm: a context is its own sandbox, read and written through a `with` over a Proxy.
 
 const intrinsicEval = eval;
 const contexts = new WeakSet();
