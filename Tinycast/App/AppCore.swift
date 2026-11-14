@@ -205,6 +205,8 @@ final class AppCore {
     @ObservationIgnored private(set) lazy var calendarCoordinator = CalendarCoordinator(
         store: calendarStore, clock: meetingClock, appIndex: appIndex, settings: settings,
         paletteCoordinator: paletteCoordinator, core: self)
+    @ObservationIgnored private(set) lazy var contactsCoordinator = ContactsCoordinator(
+        appIndex: appIndex, settings: settings, paletteCoordinator: paletteCoordinator, core: self)
     @ObservationIgnored private(set) lazy var fileSearchCoordinator = FileSearchCoordinator(
         settings: settings, appIndex: appIndex, session: fileSearch, indexer: fileIndexer,
         palette: palette, paletteCoordinator: paletteCoordinator,
@@ -354,6 +356,7 @@ final class AppCore {
             }
             updateCoordinator.applyEnabled()
             calendarCoordinator.applyEnabled()
+            contactsCoordinator.applyEnabled()
             Task { await appIndex.refresh() }
             Task { await emojiIndex.load(languages: SystemLanguages.preferred) }
             currencyRates.start()
@@ -770,6 +773,7 @@ final class AppCore {
             { _ = $0.quickActionsEnabled },
             reproject: { $0.quickActionCoordinator.applyEnabled() })
         track({ _ = $0.calendarEnabled }, reproject: { $0.calendarCoordinator.applyEnabled() })
+        track({ _ = $0.contactsEnabled }, reproject: { $0.contactsCoordinator.applyEnabled() })
         track(
             {
                 _ = $0.calendarShowInLauncher

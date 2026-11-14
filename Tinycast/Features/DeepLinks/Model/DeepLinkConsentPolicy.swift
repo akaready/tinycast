@@ -50,7 +50,7 @@ enum DeepLinkConsentPolicy {
             true
         case .quickAI, .aiChat, .calculatorHistory, .clipboardHistory, .searchEmoji, .searchFiles,
             .searchMenuItems, .switchWindows, .switchWindowsBackwards, .createCustomCommand,
-            .searchCustomCommands, .define, .mySchedule, .createEvent, .showNotes, .createNote,
+            .searchCustomCommands, .define, .mySchedule, .createEvent, .searchContacts, .showNotes, .createNote,
             .searchNotes, .createWindowLayout, .switchRoom, .createRoom, .createQuicklink,
             .searchQuicklinks, .importQuicklinks, .exportQuicklinks, .searchSnippets, .createSnippet,
             .exportSettings, .importSettings, .importFromRaycast, .store, .checkForUpdates, .settings,

@@ -1,0 +1,92 @@
+import Contacts
+import Foundation
+
+/// The only reader of Contacts: read-only, and notes are never requested.
+@MainActor
+@Observable
+final class ContactStore {
+    private(set) var access: ContactsAccess = Permissions.contactsAccess()
+
+    @ObservationIgnored private var changeObserver: NotificationToken?
+
+    /// A browse list stops here: a card photo each makes an unbounded list expensive to hold.
+    nonisolated private static let resultLimit = 200
+
+    /// TCC sends nothing when a grant changes in Settings, so anything acting on `access` re-reads.
+    func refreshAccess() {
+        access = Permissions.contactsAccess()
+    }
+
+    /// Tinycast's own consent dialog has already been accepted by the time this runs.
+    func requestAccess() async -> Bool {
+        let granted = await Permissions.requestContactsAccess()
+        refreshAccess()
+        return granted
+    }
+
+    /// Fires on any edit, from any app, so an open list never outlives the card it shows.
+    func observeChanges(_ handler: @escaping @MainActor () -> Void) {
+        let center = NotificationCenter.default
+        let token = center.addObserver(
+            forName: .CNContactStoreDidChange, object: nil, queue: .main
+        ) { _ in
+            Task { @MainActor in handler() }
+        }
+        changeObserver = NotificationToken(token, center: center)
+    }
+
+    func stopObserving() {
+        changeObserver = nil
+    }
+
+    /// Everyone for an empty query, else the cards whose name matches; sorted for display.
+    @concurrent
+    func contacts(matching query: String) async -> [Contact] {
+        let store = CNContactStore()
+        let keys = Self.keys()
+        var found: [CNContact] = []
+        if query.isEmpty {
+            let request = CNContactFetchRequest(keysToFetch: keys)
+            request.unifyResults = true
+            try? store.enumerateContacts(with: request) { contact, stop in
+                found.append(contact)
+                if found.count >= Self.resultLimit || Task.isCancelled { stop.pointee = true }
+            }
+        } else {
+            let predicate = CNContact.predicateForContacts(matchingName: query)
+            found = (try? store.unifiedContacts(matching: predicate, keysToFetch: keys)) ?? []
+        }
+        guard !Task.isCancelled else { return [] }
+        return Contact.sorted(found.prefix(Self.resultLimit).map(Self.contact(from:)))
+    }
+
+    nonisolated private static func keys() -> [any CNKeyDescriptor] {
+        [
+            CNContactIdentifierKey, CNContactGivenNameKey, CNContactFamilyNameKey,
+            CNContactNicknameKey, CNContactOrganizationNameKey, CNContactJobTitleKey,
+            CNContactPhoneNumbersKey, CNContactEmailAddressesKey, CNContactPostalAddressesKey,
+            CNContactBirthdayKey, CNContactThumbnailImageDataKey
+        ] as [any CNKeyDescriptor]
+    }
+
+    nonisolated private static func contact(from contact: CNContact) -> Contact {
+        Contact(
+            id: contact.identifier, givenName: contact.givenName, familyName: contact.familyName,
+            nickname: contact.nickname, organization: contact.organizationName,
+            jobTitle: contact.jobTitle,
+            phones: contact.phoneNumbers.map { entry($0, value: $0.value.stringValue) },
+            emails: contact.emailAddresses.map { entry($0, value: $0.value as String) },
+            addresses: contact.postalAddresses.map {
+                entry($0, value: CNPostalAddressFormatter.string(from: $0.value, style: .mailingAddress))
+            },
+            birthday: contact.birthday, thumbnail: contact.thumbnailImageData)
+    }
+
+    nonisolated private static func entry<Value>(_ item: CNLabeledValue<Value>, value: String) -> Contact.Entry {
+        Contact.Entry(
+            id: item.identifier,
+            label: item.label.map { ContactFormat.label(CNLabeledValue<Value>.localizedString(forLabel: $0)) }
+                ?? "",
+            value: value)
+    }
+}

@@ -110,6 +110,9 @@ extension SettingsAnchor {
     static let calendarMenuBar = Self(tab: .calendar, title: "Menu Bar")
     static let calendarCalendars = Self(tab: .calendar, title: "Calendars")
 
+    static let contactsContacts = Self(tab: .contacts, title: "Contacts")
+    static let contactsCommands = Self(tab: .contacts, title: "Commands")
+
     static let extensionsExtensions = Self(tab: .extensions, title: "Extensions")
     static let extensionsCommands = Self(tab: .extensions, title: "Commands")
     static let extensionsCompatibility = Self(tab: .extensions, title: "Compatibility")
@@ -124,6 +127,7 @@ extension SettingsAnchor {
     static let permissionsAccessibility = Self(tab: .permissions, title: "Accessibility")
     static let permissionsFullDiskAccess = Self(tab: .permissions, title: "Full Disk Access")
     static let permissionsCalendars = Self(tab: .permissions, title: "Calendars")
+    static let permissionsContacts = Self(tab: .permissions, title: "Contacts")
     static let permissionsMicrophone = Self(tab: .permissions, title: "Microphone")
 
     static let backupExport = Self(tab: .backup, title: "Export")
