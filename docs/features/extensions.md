@@ -752,6 +752,10 @@ interval floor instead of sixty.
 `openExtensionPreferences`, `OAuth`,
 `useNavigation`, `Icon`, `Color`, `Image.Mask`, `Keyboard.Shortcut.Common`, `LaunchType`.
 
+`Clipboard.read()` answers like Raycast: `text` is the pasteboard string, and `file` is the first copied
+file as a percent-encoded `file://` URL (`ExtensionClipboardPayload`). A copied web link arrives as `text`
+only. Extensions such as EXIF check for the `file://` prefix before they will open an image.
+
 **`raycast://` URLs** — extensions address Raycast by scheme; the most common is a bare
 `open("raycast://")` to bring the window back after something stole focus (1Password's auth flow does
 this). `ExtensionHostBridge` keeps those inside Tinycast: `raycast://extensions/<author>/<extension>/<command>`

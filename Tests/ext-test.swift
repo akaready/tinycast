@@ -197,6 +197,7 @@ struct ExtensionTests {
         actionIconChecks()
         deepLinkChecks()
         nodeShimChecks()
+        clipboardPayloadChecks()
         await runtimeChecks()
         await bundledModuleChecks()
         await navigationSearchRuntimeChecks()
@@ -259,6 +260,33 @@ struct ExtensionTests {
         } catch {
             check("bundled module fixture completes", false, String(describing: error))
         }
+    }
+
+    static func clipboardPayloadChecks() {
+        let board = NSPasteboard.withUniqueName()
+        defer { board.releaseGlobally() }
+
+        board.clearContents()
+        board.writeObjects([URL(fileURLWithPath: "/tmp/Some Photo.jpg") as NSURL])
+        let file = ExtensionClipboardPayload.read(from: board)
+        check(
+            "clipboard.read reports a copied file as a percent-encoded file URL",
+            file["file"] as? String == "file:///tmp/Some%20Photo.jpg", "\(file)")
+
+        board.clearContents()
+        board.setString("https://example.com/page", forType: .URL)
+        board.setString("see https://example.com/page", forType: .string)
+        let web = ExtensionClipboardPayload.read(from: board)
+        check(
+            "clipboard.read leaves a copied web link as text only",
+            web["file"] == nil && web["text"] as? String == "see https://example.com/page", "\(web)")
+
+        board.clearContents()
+        board.setString("plain", forType: .string)
+        let plain = ExtensionClipboardPayload.read(from: board)
+        check(
+            "clipboard.read gives plain text only",
+            plain["file"] == nil && plain["text"] as? String == "plain", "\(plain)")
     }
 
     static func nodeShimChecks() {

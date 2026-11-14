@@ -763,6 +763,7 @@ run slow ext-test          -parse-as-library \
                            $E/Model/ExtensionPickerItem.swift \
                            $E/Model/ExtensionSearchAccessory.swift \
                            $E/Service/ExtensionCatalog.swift \
+                           $E/Service/ExtensionClipboardPayload.swift \
                            $E/Service/ExtensionFetcher.swift \
                            Tinycast/Platform/ProcessExit.swift \
                            $E/Service/ExtensionIconCache.swift \

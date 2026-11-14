@@ -253,10 +253,7 @@ final class ExtensionHostBridge: ExtensionHostAPI {
             return NSPasteboard.general.string(forType: .string) ?? ""
 
         case "read":
-            var payload: [String: Any] = [:]
-            if let text = NSPasteboard.general.string(forType: .string) { payload["text"] = text }
-            if let url = NSPasteboard.general.string(forType: .URL) { payload["file"] = url }
-            return payload
+            return ExtensionClipboardPayload.read(from: .general)
 
         default:
             throw ExtensionHostError.unknown("clipboard.\(method)")
