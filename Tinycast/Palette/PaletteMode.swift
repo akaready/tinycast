@@ -27,6 +27,7 @@ enum PaletteMode: String, CaseIterable, Identifiable {
     case dictionary
     case extensionCommand
     case extensionStore
+    case contacts
 
     var id: String { rawValue }
 
@@ -58,6 +59,7 @@ enum PaletteMode: String, CaseIterable, Identifiable {
         case .dictionary: return "book.closed"
         case .extensionCommand: return "puzzlepiece.extension"
         case .extensionStore: return "storefront"
+        case .contacts: return "person.crop.circle"
         }
     }
     var placeholder: String {
@@ -88,6 +90,7 @@ enum PaletteMode: String, CaseIterable, Identifiable {
         // Replaced by the command's own `searchBarPlaceholder` whenever it declares one.
         case .extensionCommand: return String(localized: "Search…")
         case .extensionStore: return String(localized: "Search the Raycast Store…")
+        case .contacts: return String(localized: "Search your contacts…")
         }
     }
 }

@@ -133,6 +133,10 @@ struct RootPaletteView: View {
         case .extensionCommand:
             return ExtensionCommandScreen(
                 screen: extensionScreen, extensions: extensions, vm: vm, openActions: openActions)
+        case .contacts:
+            return ContactsScreen(
+                session: core.contactsCoordinator.session, coordinator: core.contactsCoordinator,
+                vm: vm, openActions: openActions)
         case .extensionStore:
             return ExtensionStoreScreen(
                 session: core.extensionCoordinator.storeSession, core: core, vm: vm,

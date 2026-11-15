@@ -83,6 +83,7 @@ struct SettingsBackup: Codable {
         // Carried like quicklinks: running a shortcut the user built grants no permission class.
         var appleShortcutsEnabled: Bool?
         // `calendarEnabled` is absent: an import must not grant calendar access.
+        // `contactsEnabled` is absent for the same reason.
         var calendarShowInLauncher: Bool?
         var calendarLauncherLimit: Int?
         // Carried: it narrows what is read rather than widening what may be reached.

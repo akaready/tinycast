@@ -243,7 +243,7 @@ Tinycast/
   Migrations/       one-shot repairs, each deleted after one stable release (migrations.md)
   Features/
     PaletteRowIndex.swift   the flat selection index — palette-owned, so it sits at the top
-    Launcher/ Clipboard/ Calculator/ Calendar/ Emoji/ FileSearch/ MenuSearch/ Notes/
+    Launcher/ Clipboard/ Calculator/ Calendar/ Contacts/ Emoji/ FileSearch/ MenuSearch/ Notes/
     Quicklinks/ Snippets/ Uninstall/ SystemActions/ CustomCommands/ HotKeys/ Backup/
     WindowManagement/ Onboarding/ Updates/ Support/ AI/ Settings/
     Extensions/

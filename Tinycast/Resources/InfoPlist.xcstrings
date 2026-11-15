@@ -237,6 +237,65 @@
         }
       }
     },
+    "NSContactsUsageDescription" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tinycast liest deine Kontakte, damit du sie durchsuchen und Personen über den Launcher erreichen kannst."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tinycast reads your contacts so you can search them and reach people from the launcher."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tinycast lee tus contactos para que puedas buscarlos y contactar con personas desde el lanzador."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tinycast lit vos contacts pour que vous puissiez les rechercher et joindre des personnes depuis le lanceur."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tinycastは連絡先を読み取り、ランチャーから検索したり連絡を取ったりできるようにします。"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tinycast는 런처에서 연락처를 검색하고 사람들에게 연락할 수 있도록 연락처를 읽습니다."
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "O Tinycast lê seus contatos para que você possa buscá-los e falar com pessoas pelo lançador."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tinycast читает ваши контакты, чтобы вы могли искать их и связываться с людьми из лаунчера."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tinycast 会读取你的通讯录，以便你从启动器中搜索联系人并联系他们。"
+          }
+        }
+      }
+    },
     "NSMicrophoneUsageDescription" : {
       "extractionState" : "manual",
       "localizations" : {

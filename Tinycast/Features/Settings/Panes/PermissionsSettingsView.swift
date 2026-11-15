@@ -7,6 +7,7 @@ struct PermissionsSettingsView: View {
     @State private var accessibilityTrusted = Permissions.isAccessibilityTrusted()
     @State private var fullDiskAccess = Permissions.hasFullDiskAccess()
     @State private var calendarAccess = Permissions.calendarAccess()
+    @State private var contactsAccess = Permissions.contactsAccess()
     @State private var microphoneAccess = Permissions.microphoneAccess()
     private let refreshTimer = Timer.publish(every: 1, on: .main, in: .common).autoconnect()
 
@@ -115,6 +116,42 @@ struct PermissionsSettingsView: View {
                 LabeledContent {
                     HStack(spacing: Theme.Spacing.lg) {
                         HStack(spacing: Theme.Spacing.xs) {
+                            Image(systemName: contactsStatus.symbol)
+                                .accessibilityHidden(true)
+                            Text(contactsStatus.title)
+                        }
+                        .foregroundStyle(contactsStatus.tint)
+                        Button(contactsNeedsPrompt ? "Grant Access…" : "Open…") {
+                            if contactsNeedsPrompt {
+                                core.contactsCoordinator.setContactsEnabled(true)
+                            } else {
+                                Permissions.openContactsSettings()
+                            }
+                        }
+                        .help(
+                            contactsNeedsPrompt
+                                ? "Turns contacts on, then asks macOS for access."
+                                : "Opens Privacy & Security › Contacts.")
+                    }
+                } label: {
+                    HStack(spacing: Theme.Spacing.lg) {
+                        PermissionSettingsIcon(
+                            path: "/System/Applications/Contacts.app")
+                        VStack(alignment: .leading, spacing: Theme.Spacing.xxs) {
+                            SettingsRowTitle(.permissionsContacts, "Contacts")
+                            Text("Allows searching your contacts.")
+                                .foregroundStyle(.secondary)
+                        }
+                    }
+                }
+            } header: {
+                SettingsSectionHeader(.permissionsContacts)
+            }
+
+            Section {
+                LabeledContent {
+                    HStack(spacing: Theme.Spacing.lg) {
+                        HStack(spacing: Theme.Spacing.xs) {
                             Image(systemName: microphoneStatus.symbol)
                                 .accessibilityHidden(true)
                             Text(microphoneStatus.title)
@@ -159,6 +196,7 @@ struct PermissionsSettingsView: View {
     }
 
     private var calendarNeedsPrompt: Bool { calendarAccess == .notDetermined }
+    private var contactsNeedsPrompt: Bool { contactsAccess == .notDetermined }
 
     private var accessibilityStatus: (title: String, symbol: String, tint: Color) {
         grantStatus(accessibilityTrusted)
@@ -176,6 +214,15 @@ struct PermissionsSettingsView: View {
 
     private var calendarStatus: (title: String, symbol: String, tint: Color) {
         switch calendarAccess {
+        case .granted: return (String(localized: "Granted"), "checkmark.circle.fill", .green)
+        case .notDetermined:
+            return (String(localized: "Not asked yet"), "questionmark.circle.fill", .secondary)
+        case .denied: return (String(localized: "Not granted"), "exclamationmark.triangle.fill", .orange)
+        }
+    }
+
+    private var contactsStatus: (title: String, symbol: String, tint: Color) {
+        switch contactsAccess {
         case .granted: return (String(localized: "Granted"), "checkmark.circle.fill", .green)
         case .notDetermined:
             return (String(localized: "Not asked yet"), "questionmark.circle.fill", .secondary)
@@ -202,6 +249,8 @@ struct PermissionsSettingsView: View {
         }
         let access = Permissions.calendarAccess()
         if access != calendarAccess { calendarAccess = access }
+        let contacts = Permissions.contactsAccess()
+        if contacts != contactsAccess { contactsAccess = contacts }
         let microphone = Permissions.microphoneAccess()
         if microphone != microphoneAccess { microphoneAccess = microphone }
     }

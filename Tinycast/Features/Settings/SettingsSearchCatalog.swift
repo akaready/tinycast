@@ -108,7 +108,7 @@ enum SettingsSearchCatalog {
     static let entries: [SettingsSearchEntry] =
         general + applications + systemSettings + systemActions + commands + quicklinks
         + appleShortcuts + fallbacks + clipboard + snippets + fileSearch + windowManagement
-        + navigation + notes + calendar + emoji + ai + quickActions + dictation + extensions + permissions
+        + navigation + notes + calendar + contacts + emoji + ai + quickActions + dictation + extensions + permissions
         + backup + about
 
     private static let general: [SettingsSearchEntry] = [
@@ -606,6 +606,18 @@ enum SettingsSearchCatalog {
             keywords: ["accounts", "sources", "choose", "icloud", "google"])
     ]
 
+    private static let contacts: [SettingsSearchEntry] = [
+        .init(
+            pane: .contacts,
+            keywords: ["people", "address book", "phone", "email", "birthday"]),
+        .init(
+            .contactsContacts, "Search contacts from Tinycast",
+            keywords: ["people", "address book", "permission", "privacy"]),
+        .init(
+            group: .contactsCommands, "Contacts commands",
+            keywords: ["shortcut", "launcher", "search contacts", "alias"])
+    ]
+
     private static let extensions: [SettingsSearchEntry] = [
         .init(
             pane: .extensions,
@@ -654,6 +666,9 @@ enum SettingsSearchCatalog {
         .init(
             .permissionsCalendars, "Calendars",
             keywords: ["events", "privacy", "grant", "eventkit"]),
+        .init(
+            .permissionsContacts, "Contacts",
+            keywords: ["people", "address book", "privacy", "grant"]),
         .init(
             .permissionsMicrophone, "Microphone",
             keywords: ["dictation", "recording", "privacy", "grant"])
