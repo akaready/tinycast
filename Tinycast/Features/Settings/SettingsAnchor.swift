@@ -112,6 +112,8 @@ extension SettingsAnchor {
 
     static let contactsContacts = Self(tab: .contacts, title: "Contacts")
     static let contactsCommands = Self(tab: .contacts, title: "Commands")
+    static let contactsApps = Self(tab: .contacts, title: "Apps")
+    static let contactsActions = Self(tab: .contacts, title: "Actions")
 
     static let extensionsExtensions = Self(tab: .extensions, title: "Extensions")
     static let extensionsCommands = Self(tab: .extensions, title: "Commands")

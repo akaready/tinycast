@@ -81,6 +81,21 @@ The launcher command is now just "Contacts" (its old name, "people" and "address
 Kept: `CommandID.searchContacts` and `command:search-contacts` (the id is persisted and used by deep
 links, and is not shown to the user); the "Search your contacts…" prompt and permission wording.
 
+### Customisable actions and apps — 2026-11-14
+
+**Why:** ↵ on an email went to the system mailto handler, which here is a browser router, so no compose
+window opened. **Landed:** Settings ▸ Contacts has Apps (Mail, Messages, Maps: System Default, any
+installed handler, or Choose… with an open panel; bundle id and path stored; a missing app falls back
+to the default with a note) and Actions (↵ and ⌘↵ per phone, email, postal address and contact row,
+plus Reset to Defaults). Pure `ContactAction`, `ContactTarget`, `ContactActionChoices`,
+`ContactAppChoices` in `Model/`; one `ContactAppLauncher`; 15 strings in all eight languages; Settings
+search entries. `contacts-test` covers the resolver, defaults, fallbacks and JSON round trips.
+**Deviated:** no birthday pickers (copy is its only action); no Phone/FaceTime app (tel: and facetime:
+go to the system default); no `settings.json` keys for the two new settings (both are stored as JSON
+and excluded from backups).
+**Not verified on screen:** the pickers, the open panel, the app actually launching with a mailto URL,
+or the footer and hint labels following a changed binding.
+
 ## Context
 
 Raycast has "Search Contacts". Upstream parked it (`docs/not-planned.md`, #1503), so this lives on

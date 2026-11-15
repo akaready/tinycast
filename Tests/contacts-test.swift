@@ -27,6 +27,7 @@ struct ContactsTests {
         cardFocus()
         monogram()
         indexFilter()
+        actionChoices()
         print("\(passes) passed, \(failures) failed")
         if failures > 0 { exit(1) }
     }
@@ -233,6 +234,58 @@ struct ContactsTests {
         expect(
             fullCard.monogramHue == ContactMonogram.hue(for: "Ada Lovelace"),
             "a card's hue follows its display name")
+    }
+
+    static func actionChoices() {
+        let standard = ContactActionChoices.standard
+        expect(standard.action(for: .phone, command: false) == .message, "a number's return is Message")
+        expect(standard.action(for: .phone, command: true) == .copy, "a number's command-return copies")
+        expect(standard.action(for: .email, command: false) == .compose, "an email's return composes")
+        expect(standard.action(for: .address, command: false) == .openInMaps, "an address opens in Maps")
+        expect(standard.action(for: .birthday, command: false) == .copy, "a birthday copies")
+        expect(standard.action(for: .birthday, command: true) == .copy, "a birthday copies either way")
+        expect(standard.action(for: .contact, command: false) == .openInContacts, "a row opens in Contacts")
+        expect(standard.action(for: .contact, command: true) == .copyName, "a row's command-return copies the name")
+        for target in ContactTarget.allCases {
+            for command in [false, true] {
+                expect(
+                    target.actions.contains(target.standard(command: command)),
+                    "\(target) default is among its offered actions")
+            }
+        }
+
+        var choices = ContactActionChoices()
+        choices.set(.faceTime, for: .phone, command: false)
+        choices.set(.message, for: .phone, command: true)
+        expect(choices.action(for: .phone, command: false) == .faceTime, "a choice is kept")
+        expect(choices.action(for: .phone, command: true) == .message, "return and command are separate")
+        expect(choices.action(for: .email, command: false) == .compose, "other targets are untouched")
+        choices.set(.compose, for: .phone, command: false)
+        expect(
+            choices.action(for: .phone, command: false) == .faceTime,
+            "an action the target does not offer is refused")
+        choices.set(.message, for: .phone, command: false)
+        choices.set(.copy, for: .phone, command: true)
+        expect(choices.isStandard, "choosing the defaults stores nothing")
+
+        choices.set(.call, for: .phone, command: false)
+        choices.set(.copy, for: .email, command: false)
+        let again = ContactActionChoices(json: choices.json)
+        expect(again == choices, "choices survive a round trip")
+        expect(ContactActionChoices(json: nil).isStandard, "no stored value is the defaults")
+        expect(ContactActionChoices(json: "not json").isStandard, "garbage is the defaults")
+        expect(
+            ContactActionChoices(json: "{\"stored\":{\"email.return\":\"openInMaps\"}}")
+                .action(for: .email, command: false) == .compose,
+            "a stored action the target does not offer falls back")
+
+        var apps = ContactAppChoices()
+        expect(apps[.mail] == nil, "no app is the system default")
+        apps[.mail] = ContactAppChoice(bundleID: "com.example.mail", path: "/Applications/Mail.app")
+        let back = ContactAppChoices(json: apps.json)
+        expect(back[.mail]?.bundleID == "com.example.mail" && back[.maps] == nil, "an app choice round-trips")
+        expect(ContactAppChoices(json: "{").json == ContactAppChoices().json, "garbage is no choice")
+        expect(ContactTarget(.address) == .address, "a field kind maps to its target")
     }
 
     static func indexFilter() {

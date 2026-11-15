@@ -1,11 +1,44 @@
 import Foundation
 
 extension ContactQuickAction {
-    var title: String {
+    var title: String { action.title(for: nil) }
+    var symbol: String { action.symbol }
+
+    var action: ContactAction {
+        switch self {
+        case .message: .message
+        case .faceTime: .faceTime
+        case .email: .compose
+        }
+    }
+}
+
+extension ContactAction {
+    func title(for kind: ContactField.Kind?) -> String {
         switch self {
         case .message: String(localized: "Message")
         case .faceTime: String(localized: "FaceTime")
-        case .email: String(localized: "Send Email")
+        case .call: String(localized: "Call")
+        case .compose: String(localized: "Send Email")
+        case .openInMaps: String(localized: "Open in Maps")
+        case .openInContacts: String(localized: "Open in Contacts")
+        case .copyName: String(localized: "Copy Name")
+        case .copy:
+            switch kind {
+            case .phone: String(localized: "Copy Phone Number")
+            case .email: String(localized: "Copy Email")
+            case .address: String(localized: "Copy Address")
+            case .birthday: String(localized: "Copy Birthday")
+            case nil: String(localized: "Copy")
+            }
+        }
+    }
+
+    /// The short word beside a key cap.
+    var hint: String {
+        switch self {
+        case .copy: String(localized: "Copy")
+        default: title(for: nil)
         }
     }
 
@@ -13,57 +46,46 @@ extension ContactQuickAction {
         switch self {
         case .message: "message"
         case .faceTime: "video"
-        case .email: "envelope"
-        }
-    }
-}
-
-extension ContactField {
-    /// What ↵ does on the field, which is also the footer pill's label.
-    var primaryTitle: String {
-        switch kind {
-        case .phone: String(localized: "Message")
-        case .email: String(localized: "Send Email")
-        case .address: String(localized: "Open in Maps")
-        case .birthday: String(localized: "Copy Birthday")
-        }
-    }
-
-    var primarySymbol: String {
-        switch kind {
-        case .phone: "message"
-        case .email: "envelope"
-        case .address: "map"
-        case .birthday: "doc.on.doc"
-        }
-    }
-
-    var copyTitle: String {
-        switch kind {
-        case .phone: String(localized: "Copy Phone Number")
-        case .email: String(localized: "Copy Email")
-        case .address: String(localized: "Copy Address")
-        case .birthday: String(localized: "Copy Birthday")
+        case .call: "phone"
+        case .compose: "envelope"
+        case .openInMaps: "map"
+        case .openInContacts: "person.crop.circle"
+        case .copy, .copyName: "doc.on.doc"
         }
     }
 }
 
 extension ContactsCoordinator {
-    /// ↵ on a field: write, compose or look up; a birthday has nothing to open, so it is copied.
-    func performPrimary(_ field: ContactField) {
-        switch field.kind {
-        case .phone: open(ContactFormat.messageURL(field.value))
-        case .email: open(ContactFormat.mailURL(field.value))
-        case .address: open(ContactFormat.mapsURL(field.value))
-        case .birthday: copyInCard(field.value, id: field.id)
+    /// What a key press resolves to for a target, from the Settings choices.
+    func action(for target: ContactTarget, command: Bool) -> ContactAction {
+        settings.contactActions.action(for: target, command: command)
+    }
+
+    /// Runs one action on a field's value, or on the contact itself when there is no field.
+    func run(_ action: ContactAction, field: ContactField?, contact: Contact) {
+        let value = field?.value ?? ""
+        switch action {
+        case .message: open(ContactFormat.messageURL(value), via: .messages)
+        case .faceTime: open(ContactFormat.faceTimeURL(value))
+        case .call: open(ContactFormat.callURL(value))
+        case .compose: open(ContactFormat.mailURL(value), via: .mail)
+        case .openInMaps: open(ContactFormat.mapsURL(value), via: .maps)
+        case .openInContacts: openInContacts(contact)
+        case .copy:
+            if let field { copyInCard(field.value, id: field.id) }
+        case .copyName: copy(contact.displayName, message: String(localized: "Copied name"))
         }
     }
 
+    /// A quick-action button acts on the card's first matching value.
     func perform(_ action: ContactQuickAction, on contact: Contact) {
+        let field: ContactField?
         switch action {
-        case .message: open(contact.phones.first.flatMap { ContactFormat.messageURL($0.value) })
-        case .faceTime: open(contact.phones.first.flatMap { ContactFormat.faceTimeURL($0.value) })
-        case .email: open(contact.emails.first.flatMap { ContactFormat.mailURL($0.value) })
+        case .message, .faceTime:
+            field = ContactCard(contact).fields.first { $0.kind == .phone }
+        case .email:
+            field = ContactCard(contact).fields.first { $0.kind == .email }
         }
+        run(action.action, field: field, contact: contact)
     }
 }

@@ -12,8 +12,9 @@ struct ContactsScreen: PaletteScreen {
     var primaryActionTitle: String {
         switch focusTarget(at: vm.selection) {
         case .quick(let action): action.title
-        case .field(let field): field.primaryTitle
-        case nil: String(localized: "Open in Contacts")
+        case .field(let field):
+            coordinator.action(for: ContactTarget(field.kind), command: false).title(for: field.kind)
+        case nil: coordinator.action(for: .contact, command: false).title(for: nil)
         }
     }
 
@@ -40,6 +41,15 @@ struct ContactsScreen: PaletteScreen {
                 ? .quick(actions[session.focus.button]) : nil
         }
         return card.field(atStop: stop).map { .field($0) }
+    }
+
+    /// The word beside ⌘↵ in the card's key hints: what the focused stop's command-return does.
+    private func commandHint(at selection: Int) -> String {
+        switch focusTarget(at: selection) {
+        case .field(let field):
+            return coordinator.action(for: ContactTarget(field.kind), command: true).hint
+        default: return coordinator.action(for: .contact, command: true).hint
+        }
     }
 
     // MARK: - Keyboard
@@ -88,105 +98,79 @@ struct ContactsScreen: PaletteScreen {
         guard let contact = contact(at: selection) else { return }
         switch focusTarget(at: selection) {
         case .quick(let action): coordinator.perform(action, on: contact)
-        case .field(let field): coordinator.performPrimary(field)
-        case nil: coordinator.openInContacts(contact)
+        case .field(let field):
+            let target = ContactTarget(field.kind)
+            coordinator.run(coordinator.action(for: target, command: false), field: field, contact: contact)
+        case nil:
+            coordinator.run(coordinator.action(for: .contact, command: false), field: nil, contact: contact)
         }
     }
 
-    /// ⌘↵ — the focused value, else the name, for pasting into a message or a document.
+    /// ⌘↵ — by default the focused value, else the name; Settings can point it elsewhere.
     func secondary(at selection: Int) -> Bool {
         guard let contact = contact(at: selection) else { return false }
         if case .field(let field) = focusTarget(at: selection) {
-            coordinator.copyInCard(field.value, id: field.id)
-            return true
+            let target = ContactTarget(field.kind)
+            coordinator.run(coordinator.action(for: target, command: true), field: field, contact: contact)
+        } else {
+            coordinator.run(coordinator.action(for: .contact, command: true), field: nil, contact: contact)
         }
-        coordinator.copy(contact.displayName, message: String(localized: "Copied name"))
         return true
     }
 
     // MARK: - Actions
 
-    /// A card with several numbers gets a row per number, each stating its label and value.
+    /// Every action stays in the menu whatever Settings binds ↵ and ⌘↵ to; the bound ones say so.
+    private func shortcut(_ action: ContactAction, _ target: ContactTarget) -> String? {
+        if action == coordinator.action(for: target, command: false) { return "↵" }
+        return action == coordinator.action(for: target, command: true) ? "⌘↵" : nil
+    }
+
+    /// A card with several values gets a row per value, each stating its label and value.
     func actions(at selection: Int) -> PopoverMenuContent? {
         guard let contact = contact(at: selection) else { return nil }
         if case .field(let field) = focusTarget(at: selection) {
             return PopoverMenuContent(header: contact.displayName, items: fieldItems(field, contact))
         }
-        var items = [
+        var items = ContactTarget.contact.actions.map { action in
             PopoverMenuItem(
-                title: String(localized: "Open in Contacts"), systemImage: "person.crop.circle",
-                shortcut: "↵"
-            ) { coordinator.openInContacts(contact) },
-            PopoverMenuItem(
-                title: String(localized: "Copy Name"), systemImage: "doc.on.doc", shortcut: "⌘↵"
-            ) { coordinator.copy(contact.displayName, message: String(localized: "Copied name")) }
-        ]
-        for phone in contact.phones {
-            items.append(
-                row(
-                    String(localized: "Message"), "message", phone, first: phone == contact.phones.first
-                ) { coordinator.open(ContactFormat.messageURL(phone.value)) })
-            items.append(
-                row(String(localized: "FaceTime"), "video", phone) {
-                    coordinator.open(ContactFormat.faceTimeURL(phone.value))
-                })
-            items.append(
-                row(String(localized: "Copy Phone Number"), "phone", phone) {
-                    coordinator.copy(phone.value)
-                })
+                title: action.title(for: nil), systemImage: action.symbol,
+                shortcut: shortcut(action, .contact)
+            ) { coordinator.run(action, field: nil, contact: contact) }
         }
-        for email in contact.emails {
-            items.append(
-                row(
-                    String(localized: "Send Email"), "envelope", email,
-                    first: email == contact.emails.first
-                ) { coordinator.open(ContactFormat.mailURL(email.value)) })
-            items.append(
-                row(String(localized: "Copy Email"), "at", email) { coordinator.copy(email.value) })
-        }
-        for address in contact.addresses {
-            items.append(
-                row(
-                    String(localized: "Copy Address"), "mappin.and.ellipse", address,
-                    first: address == contact.addresses.first
-                ) { coordinator.copy(address.value) })
+        let fields = ContactCard(contact).fields
+        for kind in [ContactField.Kind.phone, .email, .address] {
+            let ofKind = fields.filter { $0.kind == kind }
+            for field in ofKind {
+                for action in ContactTarget(kind).actions {
+                    items.append(
+                        row(action, field, contact, first: action == ContactTarget(kind).actions.first
+                            && field == ofKind.first))
+                }
+            }
         }
         return PopoverMenuContent(header: contact.displayName, items: items)
     }
 
     private func fieldItems(_ field: ContactField, _ contact: Contact) -> [PopoverMenuItem] {
-        let copy = PopoverMenuItem(
-            title: field.copyTitle, systemImage: "doc.on.doc",
-            shortcut: field.kind == .birthday ? "↵" : "⌘↵"
-        ) { coordinator.copyInCard(field.value, id: field.id) }
-        let primary = PopoverMenuItem(
-            title: field.primaryTitle, systemImage: field.primarySymbol, shortcut: "↵"
-        ) { coordinator.performPrimary(field) }
-        switch field.kind {
-        case .phone:
-            return [
-                primary,
-                PopoverMenuItem(title: String(localized: "FaceTime"), systemImage: "video") {
-                    coordinator.open(ContactFormat.faceTimeURL(field.value))
-                },
-                PopoverMenuItem(title: String(localized: "Call"), systemImage: "phone") {
-                    coordinator.open(ContactFormat.callURL(field.value))
-                },
-                copy
-            ]
-        case .birthday: return [copy]
-        case .email, .address: return [primary, copy]
+        let target = ContactTarget(field.kind)
+        return target.actions.map { action in
+            PopoverMenuItem(
+                title: action.title(for: field.kind), systemImage: action.symbol,
+                shortcut: shortcut(action, target)
+            ) { coordinator.run(action, field: field, contact: contact) }
         }
     }
 
     private func row(
-        _ title: String, _ symbol: String, _ entry: Contact.Entry, first: Bool = false,
-        action: @escaping () -> Void
+        _ action: ContactAction, _ field: ContactField, _ contact: Contact, first: Bool
     ) -> PopoverMenuItem {
-        let detail = [entry.label, ContactFormat.oneLine(entry.value)].filter { !$0.isEmpty }
+        let detail = [field.label, ContactFormat.oneLine(field.value)].filter { !$0.isEmpty }
             .joined(separator: "  ")
         return PopoverMenuItem(
-            title: title, icon: .symbol(symbol), startsSection: first, detail: detail, action: action)
+            title: action.title(for: field.kind), icon: .symbol(action.symbol), startsSection: first,
+            detail: detail
+        ) { coordinator.run(action, field: field, contact: contact) }
     }
 
     // MARK: - Body
@@ -212,8 +196,15 @@ struct ContactsScreen: PaletteScreen {
                     guard let contact = contact(at: vm.selection) else { return }
                     coordinator.perform(action, on: contact)
                 },
-                onPrimary: { coordinator.performPrimary($0) },
-                onCopy: { coordinator.copyInCard($0.value, id: $0.id) }
+                primaryAction: { coordinator.action(for: ContactTarget($0.kind), command: false) },
+                onPrimary: {
+                    guard let contact = contact(at: vm.selection) else { return }
+                    coordinator.run(
+                        coordinator.action(for: ContactTarget($0.kind), command: false),
+                        field: $0, contact: contact)
+                },
+                onCopy: { coordinator.copyInCard($0.value, id: $0.id) },
+                commandHint: commandHint(at: selection)
             )
             .onChange(of: selection) { session.updateFocus { $0.leave() } }
             .onAppear { session.start(query: vm.query) }
