@@ -61,6 +61,9 @@ struct Contact: Identifiable, Equatable, Sendable {
         return source.compactMap(\.first).prefix(2).map { String($0).localizedUppercase }.joined()
     }
 
+    /// The monogram's hue follows the name shown, so the list row and the card always agree.
+    var monogramHue: Double { ContactMonogram.hue(for: displayName) }
+
     var isEmpty: Bool {
         phones.isEmpty && emails.isEmpty && addresses.isEmpty && birthday == nil
     }

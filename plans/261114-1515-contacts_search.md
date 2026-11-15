@@ -24,6 +24,27 @@ search-field text is not matched against company or email: it is the system name
 **Left undone:** a manual pass of the sweep in `docs/testing.md`; install into /Applications (needs the
 user at the keyboard for codesign); the status flips to `shipped` once it is seen working and merged.
 
+### Polish pass — 2026-11-14
+
+**Landed:** the detail card is now a keyboard set. ⇥ (or → on an empty query) enters it, ↑↓ move between
+stops (quick-action row, then each phone, email, address and the birthday), ←/Esc leave, ↵ runs the
+field's primary action (Message, compose, Open in Maps), ⌘↵ copies with an inline "Copied", ⌘K offers
+the field's own actions. Focus is a tint plus a full-perimeter border; the footer pill and a key-hint
+strip under the card follow the focused stop. A large circular photo (full `imageData`, loaded for the
+open card only, ImageIO-shrunk) or a stable-hue monogram; name in display weight, role · company
+beneath, quick-action buttons, then grouped sections with hover-revealed primary and copy buttons.
+List rows share the monogram logic. Pure logic (card stops, focus, monogram hue, maps URL) is in
+`Model/ContactCard.swift` with 40 harness assertions; five strings translated into all eight languages.
+**Verified (polish):** `contacts-test` 40/40, `Scripts/run-tests.sh` (114 harnesses), `Scripts/lint.sh`
+clean, the purity grep empty, unsigned Debug build with no warnings.
+**Deviated (polish):** added one shell hook, `PaletteScreen.escape(at:)`, because Esc had no screen
+hook; ⌘↵ in the card copies and keeps the palette open (the list's ⌘↵ still closes with a HUD); ⇥ from
+the list now enters the card instead of cycling to the launcher (Shift-⇥ still cycles); two `Theme.Colors`
+tokens were added for the monogram.
+**Left undone (polish):** never run on screen, so no screenshot: the build is unsigned and the Contacts
+grant needs the macOS prompt answered by the user. Unseen: focus-ring look, monogram contrast on real
+hues, photo load timing, the Maps/Messages/FaceTime hand-offs, → entering the card with the caret.
+
 ## Context
 
 Raycast has "Search Contacts". Upstream parked it (`docs/not-planned.md`, #1503), so this lives on

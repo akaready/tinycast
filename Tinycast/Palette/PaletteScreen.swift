@@ -82,6 +82,8 @@ private extension MenuPanelCorner {
     func tabTarget(from selection: Int, backwards: Bool) -> Int?
     /// True when the screen acted on ⇥ itself, which it then owns ahead of `tabTarget`.
     func tab(at selection: Int, backwards: Bool) -> Bool
+    /// True when the screen used Esc to step out of an inner focus, ahead of the palette's own ladder.
+    func escape(at selection: Int) -> Bool
     /// The ⌘K rows as the palette's own menu; nil when there are none.
     func actions(at selection: Int) -> PopoverMenuContent?
     /// Defaults to wrapping `actions(at:)`, so a screen implements one or the other.
@@ -118,6 +120,7 @@ extension PaletteScreen {
     func ownsVerticalKeys(at selection: Int) -> Bool { false }
     func tabTarget(from selection: Int, backwards: Bool) -> Int? { nil }
     func tab(at selection: Int, backwards: Bool) -> Bool { false }
+    func escape(at selection: Int) -> Bool { false }
     func actions(at selection: Int) -> PopoverMenuContent? { nil }
     func menuContent(
         at selection: Int, searchQuery: ActionMenuSearchQuery, menuSelection: Binding<Int>,

@@ -116,7 +116,8 @@ code ([extensions.md](extensions.md#the-store)).
 **Tab rings the three surfaces a reader opens directly — launcher → AI chat → clipboard → launcher**
 — unless the screen claims it through `tab(at:backwards:)` (native editors and extension forms walk
 their own fields), or the selected row declares arguments, in which case it walks those fields first (see
-below); every other mode stays off the ring, and is reached by a command or a global hotkey, with
+below); a screen with an inner focus also claims Esc through `escape(at:)`, ahead of the ladder, to
+step out of it (Contacts' card); every other mode stays off the ring, and is reached by a command or a global hotkey, with
 Uninstall only from a launcher app's Actions menu, scoped to that app. Chat is skipped whole when
 `aiEnabled` is off, which leaves the launcher ↔ clipboard flip the ring replaced.
 

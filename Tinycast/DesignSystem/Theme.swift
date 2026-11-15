@@ -432,6 +432,11 @@ enum Theme {
 
         /// Selection fill, shared by every list so they look identical.
         static let selection = ramp(dark: 0.10, light: 0.09)
+        /// A photo-less contact's ground: the hue is the name's, the rest held so white ink stays legible.
+        static func monogram(hue: Double) -> Color {
+            Color(hue: hue, saturation: 0.45, brightness: 0.42)
+        }
+        static let monogramInk = Color.white
         static let rowHover = ramp(dark: 0.05, light: 0.045)
         static let emojiCell = ramp(dark: 0.045, light: 0.04)
         static let emojiHoverBorder = ramp(dark: 0.42, light: 0.34)
