@@ -122,6 +122,10 @@ enum SettingsBackupCoverage {
             "Doubles as consent to read your calendar; an import must not grant calendar access.",
         AppSettingsKey.contactsEnabled.rawValue:
             "Doubles as consent to read your contacts; an import must not grant contacts access.",
+        AppSettingsKey.contactActions.rawValue:
+            "Contacts preferences stay local until backup supports them.",
+        AppSettingsKey.contactApps.rawValue:
+            "Names apps installed at paths on this Mac; another Mac may not have them.",
         AppSettingsKey.autoJoinMeetings.rawValue:
             "Arms the app to open meeting links unattended; an import must not switch that on.",
         AppSettingsKey.cameraPreview.rawValue:

@@ -1,13 +1,13 @@
 import AppKit
 
-/// Owns the opt-in, the Search Contacts command and what a card's actions do.
+/// Owns the opt-in, the Contacts command and what a card's actions do.
 @MainActor
 @Observable
 final class ContactsCoordinator {
     let session: ContactsSession
     private let store: ContactStore
     private let appIndex: AppIndex
-    private let settings: AppSettings
+    let settings: AppSettings
     private let paletteCoordinator: PaletteCoordinator
     /// Dialogs and the HUD, so both stay owned by `AppCore`.
     private unowned let core: AppCore
@@ -100,10 +100,11 @@ final class ContactsCoordinator {
         session.flashCopied(id)
     }
 
-    func open(_ url: URL?) {
+    /// `role` names the app the user picked for that hand-off; none means the system default.
+    func open(_ url: URL?, via role: ContactAppRole? = nil) {
         guard let url else { return }
         paletteCoordinator.hidePalette(restoreFocus: false)
-        NSWorkspace.shared.open(url)
+        ContactAppLauncher.open(url, with: role.flatMap { settings.contactApps[$0] })
     }
 
     func openInContacts(_ contact: Contact) {

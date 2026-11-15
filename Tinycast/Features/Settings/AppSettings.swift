@@ -500,6 +500,16 @@ final class AppSettings {
         didSet { defaults.set(contactsEnabled, forKey: Key.contactsEnabled.rawValue) }
     }
 
+    /// What ↵ and ⌘↵ do on a card's fields and rows; stored as JSON of only the changes.
+    var contactActions: ContactActionChoices {
+        didSet { defaults.set(contactActions.json, forKey: Key.contactActions.rawValue) }
+    }
+
+    /// The apps that open a contact's mail, messages and maps; absent means the system default.
+    var contactApps: ContactAppChoices {
+        didSet { defaults.set(contactApps.json, forKey: Key.contactApps.rawValue) }
+    }
+
     var calendarShowInLauncher: Bool {
         didSet {
             defaults.set(calendarShowInLauncher, forKey: Key.calendarShowInLauncher.rawValue)
@@ -851,6 +861,8 @@ final class AppSettings {
         // Opt-in, like extensions: until it is asked for, EventKit is never loaded.
         calendarEnabled = defaults.bool(forKey: Key.calendarEnabled.rawValue)
         contactsEnabled = defaults.bool(forKey: Key.contactsEnabled.rawValue)
+        contactActions = ContactActionChoices(json: defaults.string(forKey: Key.contactActions.rawValue))
+        contactApps = ContactAppChoices(json: defaults.string(forKey: Key.contactApps.rawValue))
         calendarShowInLauncher =
             defaults.object(forKey: Key.calendarShowInLauncher.rawValue) == nil
             || defaults.bool(forKey: Key.calendarShowInLauncher.rawValue)

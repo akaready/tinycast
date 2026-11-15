@@ -1,6 +1,6 @@
 # Contacts
 
-One launcher command, **Search Contacts**, that opens a palette screen over the Mac's address book:
+One launcher command, **Contacts** (internally `.searchContacts`, found by "search contacts" and "people" too), that opens a palette screen over the Mac's address book:
 a search field, a list, and a detail pane (photo, quick actions, phones, emails, addresses, birthday). Actions copy a
 value, write an email, message or FaceTime a number, or open the card in Contacts.app. Fork-only:
 upstream parked it ([not-planned.md](../not-planned.md)), so it lives on `local` and is never sent upstream.
@@ -56,12 +56,24 @@ upstream parked it ([not-planned.md](../not-planned.md)), so it lives on `local`
 - **A row never changes size or text position between states.** The focus border is always drawn
   (clear when unfocused), and the hover buttons and "Copied" share one fixed trailing slot and only
   fade.
+- **What ↵ and ⌘↵ do is a setting, resolved in `Model/`.** `ContactTarget` (phone, email, address,
+  birthday, the contact row) offers a fixed list of `ContactAction`s and a default for each key;
+  `ContactActionChoices` stores only the differences (JSON under `AppSettingsKey.contactActions`) and
+  falls back to the default for anything the target no longer offers. The footer pill, the key hints,
+  the hover buttons and the ⌘K shortcut labels all read the resolved action. ⌘K still lists every
+  action for the target, whatever is bound.
+- **Hand-offs can name an app, and a missing app falls back.** `ContactAppChoices` (mail, messages,
+  maps) holds a bundle identifier and a path; `ContactAppLauncher.open` finds the app by identifier,
+  then path, and opens the URL with it, else uses the system default (the picker shows a note when the
+  app is gone). Nothing changes system defaults. Both settings keys are in
+  `SettingsBackupCoverage.deliberatelyExcluded` (machine-specific paths; action choices stay local
+  until backup supports them) and have no `settings.json` key yet.
 - **Focus is drawn symmetrically**: a tint plus a full-perimeter border, never an edge accent.
   Animation is opacity only and is dropped under Reduce Motion.
 
 ## Actions
 
-Keyboard in the card (the footer pill and the key hints under the card follow the focused stop):
+Keyboard in the card (the footer pill and the key hints under the card follow the focused stop; the ↵ and ⌘↵ actions below are the defaults, configurable in Settings ▸ Contacts ▸ Actions):
 
 | Key        | In the list                              | On the card                                          |
 | ---------- | ---------------------------------------- | ---------------------------------------------------- |
@@ -94,5 +106,7 @@ menu has no submenus, so the choice is made by picking the row rather than a sec
 | List and detail pane   | `UI/ContactsView.swift`                      |
 | Card stops, focus, monogram hue | `Model/ContactCard.swift`           |
 | `CNContactStore` wrapper | `Service/ContactStore.swift`               |
-| Settings pane          | `Settings/ContactsSettingsView.swift`        |
+| Settings pane, app picker | `Settings/ContactsSettingsView.swift`, `Settings/ContactAppPicker.swift` |
+| Action and app choices | `Model/ContactAction.swift`                  |
+| Opening with a chosen app | `Service/ContactAppLauncher.swift`        |
 | Permission shim        | `Platform/Permissions.swift` (`contactsAccess`) |

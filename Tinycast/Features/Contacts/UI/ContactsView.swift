@@ -13,8 +13,10 @@ struct ContactsView: View {
     let onActions: (Int) -> Void
     let onFocusStop: (Int) -> Void
     let onQuick: (ContactQuickAction) -> Void
+    let primaryAction: (ContactField) -> ContactAction
     let onPrimary: (ContactField) -> Void
     let onCopy: (ContactField) -> Void
+    let commandHint: String
 
     private var selected: Contact? { rows.indices.contains(selection) ? rows[selection] : nil }
 
@@ -27,7 +29,8 @@ struct ContactsView: View {
                 Rectangle().fill(Theme.Colors.separator).frame(width: Theme.Size.hairline)
                 ContactDetailPane(
                     session: session, contact: selected, onFocusStop: onFocusStop, onQuick: onQuick,
-                    onPrimary: onPrimary, onCopy: onCopy)
+                    primaryAction: primaryAction, onPrimary: onPrimary, onCopy: onCopy,
+                    commandHint: commandHint)
             }
         }
     }
@@ -160,8 +163,10 @@ struct ContactDetailPane: View {
     let contact: Contact?
     let onFocusStop: (Int) -> Void
     let onQuick: (ContactQuickAction) -> Void
+    let primaryAction: (ContactField) -> ContactAction
     let onPrimary: (ContactField) -> Void
     let onCopy: (ContactField) -> Void
+    let commandHint: String
 
     private static let photoSide: CGFloat = 104
     private static let photoPixels = 640
@@ -280,9 +285,10 @@ struct ContactDetailPane: View {
                 ForEach(fields) { field in
                     let stop = card.stop(of: field)
                     FieldRow(
-                        field: field, focused: stop != nil && session.focus.stop == stop,
+                        field: field, primary: primaryAction(field),
+                        focused: stop != nil && session.focus.stop == stop,
                         copied: session.copiedID == field.id,
-                        focus: { stop.map(onFocusStop) }, primary: { onPrimary(field) },
+                        focus: { stop.map(onFocusStop) }, perform: { onPrimary(field) },
                         copy: { onCopy(field) })
                     .id(field.id)
                 }
@@ -296,7 +302,7 @@ struct ContactDetailPane: View {
         HStack(spacing: metrics.spacing.xl) {
             hint(["↑", "↓"], String(localized: "Move"))
             hint(["←"], String(localized: "List"))
-            hint(["⌘", "↵"], String(localized: "Copy"))
+            hint(["⌘", "↵"], commandHint)
         }
         .padding(.vertical, metrics.spacing.sm)
         .frame(maxWidth: .infinity)
@@ -358,10 +364,12 @@ private struct QuickActionButton: View {
 private struct FieldRow: View {
     @Environment(\.metrics) private var metrics
     let field: ContactField
+    /// What ↵ does here, which decides the first hover button; copy is always the other.
+    let primary: ContactAction
     let focused: Bool
     let copied: Bool
     let focus: () -> Void
-    let primary: () -> Void
+    let perform: () -> Void
     let copy: () -> Void
     @State private var hovered = false
 
@@ -396,8 +404,8 @@ private struct FieldRow: View {
         .armedHover($hovered)
         .accessibilityElement(children: .combine)
         .accessibilityAddTraits(.isButton)
-        .accessibilityAction(named: Text(field.primaryTitle), primary)
-        .accessibilityAction(named: Text(field.copyTitle), copy)
+        .accessibilityAction(named: Text(primary.title(for: field.kind)), perform)
+        .accessibilityAction(named: Text(ContactAction.copy.title(for: field.kind)), copy)
     }
 
     private var fill: Color {
@@ -410,10 +418,10 @@ private struct FieldRow: View {
         let showButtons = (focused || hovered) && !copied
         return ZStack(alignment: .trailing) {
             HStack(spacing: metrics.spacing.xs) {
-                if field.kind != .birthday {
-                    iconButton(field.primarySymbol, field.primaryTitle, primary)
+                if primary != .copy {
+                    iconButton(primary.symbol, primary.title(for: field.kind), perform)
                 }
-                iconButton("doc.on.doc", field.copyTitle, copy)
+                iconButton("doc.on.doc", ContactAction.copy.title(for: field.kind), copy)
             }
             .opacity(showButtons ? 1 : 0)
             .allowsHitTesting(showButtons)

@@ -609,13 +609,36 @@ enum SettingsSearchCatalog {
     private static let contacts: [SettingsSearchEntry] = [
         .init(
             pane: .contacts,
-            keywords: ["people", "address book", "phone", "email", "birthday"]),
+            keywords: ["people", "address book", "phone", "email", "birthday", "search contacts"]),
         .init(
-            .contactsContacts, "Search contacts from Tinycast",
-            keywords: ["people", "address book", "permission", "privacy"]),
+            .contactsContacts, "Contacts in Tinycast",
+            keywords: ["people", "address book", "permission", "privacy", "search contacts"]),
         .init(
             group: .contactsCommands, "Contacts commands",
-            keywords: ["shortcut", "launcher", "search contacts", "alias"])
+            keywords: ["shortcut", "launcher", "search contacts", "alias"]),
+        .init(
+            group: .contactsApps, "Apps",
+            keywords: ["mail", "messages", "maps", "default", "handler", "mailto", "compose"]),
+        .init(
+            .contactsApps, "Mail App",
+            keywords: ["email", "compose", "mailto", "browser", "default", "crest"]),
+        .init(
+            .contactsApps, "Messages App", keywords: ["sms", "text", "imessage", "default"]),
+        .init(.contactsApps, "Maps App", keywords: ["address", "directions", "default"]),
+        .init(
+            group: .contactsActions, "Actions",
+            keywords: ["return", "enter", "command", "key", "shortcut", "reset", "default"]),
+        .init(
+            .contactsActions, "Phone Number",
+            keywords: ["return", "enter", "message", "facetime", "call", "copy"]),
+        .init(
+            .contactsActions, "Email Address", keywords: ["return", "enter", "compose", "copy"]),
+        .init(
+            .contactsActions, "Postal Address",
+            keywords: ["return", "enter", "maps", "copy", "location"]),
+        .init(
+            .contactsActions, "Contact",
+            keywords: ["return", "enter", "open in contacts", "copy name", "row"])
     ]
 
     private static let extensions: [SettingsSearchEntry] = [
