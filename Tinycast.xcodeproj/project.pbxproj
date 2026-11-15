@@ -206,6 +206,7 @@
 		3B02D6CE68E0E488955A19B5 /* SnippetTemplateEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = F58E564E6181EB15497E51CD /* SnippetTemplateEngine.swift */; };
 		3B0A75B76B65E651BCB97D71 /* CameraPreviewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4AEBAA9641BC6C279DB0123C /* CameraPreviewController.swift */; };
 		3B0E1DFB220BCBB7EADF65B7 /* AIRequestBody.swift in Sources */ = {isa = PBXBuildFile; fileRef = 65F1010FAC9C0EC4DBDE58A8 /* AIRequestBody.swift */; };
+		3B6AEB543946EEDB97338E10 /* ContactIndex.swift in Sources */ = {isa = PBXBuildFile; fileRef = D03FDCEF13FAD5DE1DE913CF /* ContactIndex.swift */; };
 		3BC6CC35889FFC77D640C7CA /* SnippetsSettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = EC2EF66267B0141279A43613 /* SnippetsSettingsView.swift */; };
 		3BF31D4A2297E50D195D0CBA /* CustomCommandEditorSession.swift in Sources */ = {isa = PBXBuildFile; fileRef = E73397884822CD8D0D79B760 /* CustomCommandEditorSession.swift */; };
 		3C23AEA2FDDB7BD61278BD77 /* QuickActionsSettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C5941CE8F08FD5986FED12E9 /* QuickActionsSettingsView.swift */; };
@@ -1711,6 +1712,7 @@
 		CF64F5FCB3872996AE57FDBB /* FileSearchCoordinator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FileSearchCoordinator.swift; sourceTree = "<group>"; };
 		CFBF31AF26A4786B234ABB64 /* ExtensionAnimatedImage.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ExtensionAnimatedImage.swift; sourceTree = "<group>"; };
 		D03E3DB2E1E28057B98FC1DF /* ExtensionFieldHint.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ExtensionFieldHint.swift; sourceTree = "<group>"; };
+		D03FDCEF13FAD5DE1DE913CF /* ContactIndex.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContactIndex.swift; sourceTree = "<group>"; };
 		D0508EBDFD6E59370AB2E5B7 /* UninstallScreen.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UninstallScreen.swift; sourceTree = "<group>"; };
 		D0C8025ED5F2833127E20C05 /* ExtensionFieldChrome.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ExtensionFieldChrome.swift; sourceTree = "<group>"; };
 		D0D05FD9A7137951B2EC6C39 /* CommandEscapeTap.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CommandEscapeTap.swift; sourceTree = "<group>"; };
@@ -2481,6 +2483,7 @@
 				25CD52F62F6FC073BE429D19 /* Contact.swift */,
 				7415E78F7CD1641518F61769 /* ContactCard.swift */,
 				BF0D557BA1F0D1B237280AF4 /* ContactFormat.swift */,
+				D03FDCEF13FAD5DE1DE913CF /* ContactIndex.swift */,
 				54EA21498F7A395EFA7A9A4B /* ContactQuery.swift */,
 			);
 			path = Model;
@@ -4452,6 +4455,7 @@
 				48993DEAD8CFE4BD89EF6760 /* ContactCard.swift in Sources */,
 				BE408103B1324F7FA68EBAE4 /* ContactCardLabels.swift in Sources */,
 				E64D8F2C35B02615E33CA053 /* ContactFormat.swift in Sources */,
+				3B6AEB543946EEDB97338E10 /* ContactIndex.swift in Sources */,
 				6FA54CB5D66696984DCB5909 /* ContactQuery.swift in Sources */,
 				E4462D022EF7394B60E00BAE /* ContactStore.swift in Sources */,
 				EE352AB7DAECFDD3CFEFFD06 /* ContactsAccess.swift in Sources */,

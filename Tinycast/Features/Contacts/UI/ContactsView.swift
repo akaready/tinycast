@@ -47,7 +47,7 @@ struct ContactsView: View {
             ScrollView {
                 LazyVStack(spacing: 0) {
                     ForEach(Array(rows.enumerated()), id: \.element.id) { index, contact in
-                        ContactRow(contact: contact, selected: index == selection)
+                        ContactRow(session: session, contact: contact, selected: index == selection)
                             .contentShape(Rectangle())
                             .onRightClick { onActions(index) }
                             .onRowClick(
@@ -76,6 +76,7 @@ struct ContactsView: View {
 
 private struct ContactRow: View {
     @Environment(\.metrics) private var metrics
+    let session: ContactsSession
     let contact: Contact
     let selected: Bool
     @State private var hovered = false
@@ -88,7 +89,9 @@ private struct ContactRow: View {
 
     var body: some View {
         HStack(spacing: metrics.spacing.lg) {
-            ContactAvatar(contact: contact, size: metrics.size.resultRowIcon, decorative: true)
+            ContactAvatar(
+                contact: contact, size: metrics.size.resultRowIcon,
+                photo: session.thumbnails[contact.id], decorative: true)
             VStack(alignment: .leading, spacing: 0) {
                 Text(contact.displayName)
                     .font(metrics.typography.rowTitle)
@@ -109,6 +112,7 @@ private struct ContactRow: View {
             RoundedRectangle(cornerRadius: metrics.radius.row, style: .continuous).fill(fill)
         )
         .armedHover($hovered)
+        .task(id: contact.id) { await session.loadThumbnail(for: contact.id) }
         .accessibilityElement(children: .combine)
         .accessibilityAddTraits(.isButton)
     }
@@ -163,12 +167,14 @@ struct ContactDetailPane: View {
     private static let photoPixels = 640
     private static let quickRowID = "quick-actions"
 
+    private var shown: Contact? { contact.map(session.resolved) }
+
     private var fade: Animation? { reduceMotion ? nil : .easeOut(duration: Theme.Duration.hover) }
 
     var body: some View {
         ScrollViewReader { proxy in
             ScrollView {
-                if let contact {
+                if let contact = shown {
                     content(ContactCard(contact))
                         .id(contact.id)
                         .transition(.opacity)
@@ -176,7 +182,7 @@ struct ContactDetailPane: View {
             }
             .animation(fade, value: contact?.id)
             .onChange(of: session.focus) { _, focus in
-                guard let contact, let stop = focus.stop else { return }
+                guard let contact = shown, let stop = focus.stop else { return }
                 let card = ContactCard(contact)
                 let target =
                     card.hasQuickRow && stop == 0
@@ -194,6 +200,7 @@ struct ContactDetailPane: View {
         .animation(fade, value: session.focus.isInCard)
         .task(id: contact?.id) {
             guard let id = contact?.id else { return }
+            await session.loadDetail(for: id)
             await session.photo(for: id, maxPixel: Self.photoPixels)
         }
     }
@@ -326,10 +333,9 @@ private struct QuickActionButton: View {
                     .frame(width: metrics.size.menuButton, height: metrics.size.menuButton)
                     .background(Circle().fill(fill))
                     .overlay {
-                        if focused {
-                            Circle().strokeBorder(
-                                Theme.Colors.border, lineWidth: metrics.size.formFieldFocusStroke)
-                        }
+                        Circle().strokeBorder(
+                            focused ? Theme.Colors.border : .clear,
+                            lineWidth: metrics.size.formFieldFocusStroke)
                     }
                 Text(action.title)
                     .font(metrics.typography.keyCap)
@@ -381,10 +387,9 @@ private struct FieldRow: View {
         .padding(.vertical, metrics.spacing.sm)
         .background(shape.fill(fill))
         .overlay {
-            if focused {
-                shape.strokeBorder(
-                    Theme.Colors.border, lineWidth: metrics.size.formFieldFocusStroke)
-            }
+            shape.strokeBorder(
+                focused ? Theme.Colors.border : .clear,
+                lineWidth: metrics.size.formFieldFocusStroke)
         }
         .contentShape(shape)
         .onTapGesture(perform: focus)
@@ -400,21 +405,26 @@ private struct FieldRow: View {
         return hovered ? Theme.Colors.rowHover : .clear
     }
 
-    @ViewBuilder
+    /// Both states always take their space and only fade, so no text moves when one appears.
     private var trailing: some View {
-        if copied {
-            Label("Copied", systemImage: "checkmark")
-                .font(metrics.typography.rowTrailing)
-                .foregroundStyle(.secondary)
-                .transition(.opacity)
-        } else if focused || hovered {
+        let showButtons = (focused || hovered) && !copied
+        return ZStack(alignment: .trailing) {
             HStack(spacing: metrics.spacing.xs) {
                 if field.kind != .birthday {
                     iconButton(field.primarySymbol, field.primaryTitle, primary)
                 }
                 iconButton("doc.on.doc", field.copyTitle, copy)
             }
+            .opacity(showButtons ? 1 : 0)
+            .allowsHitTesting(showButtons)
+            .accessibilityHidden(!showButtons)
+            Label("Copied", systemImage: "checkmark")
+                .font(metrics.typography.rowTrailing)
+                .foregroundStyle(.secondary)
+                .opacity(copied ? 1 : 0)
+                .accessibilityHidden(!copied)
         }
+        .fixedSize()
     }
 
     private func iconButton(_ symbol: String, _ title: String, _ action: @escaping () -> Void)

@@ -45,6 +45,35 @@ tokens were added for the monogram.
 grant needs the macOS prompt answered by the user. Unseen: focus-ring look, monogram contrast on real
 hues, photo load timing, the Maps/Messages/FaceTime hand-offs, → entering the card with the caret.
 
+### Fix pass — 2026-11-14 (hands-on test)
+
+**Causes:** (1) the focus border and the hover buttons / "Copied" label were inserted and removed in
+layout, so text moved; (2) every open refetched up to 200 cards with every key, thumbnails, postal
+addresses and birthdays included, and kept nothing between opens. **Changed:** a constant clear-stroke
+border and one fixed trailing slot that only fades (rows and quick buttons); a names-only list fetch,
+per-card details and per-row thumbnails loaded lazily, a warm names-only browse list kept across opens
+and discarded by `CNContactStoreDidChange`; signposts (`ContactsEnumerate`, `ContactsSearch`,
+`ContactsMap`, `ContactsCard`) in the subsystem `com.tinycast.perf`.
+**Verified:** tests, lint, purity grep, unsigned Debug build. **Not measured:** no address book or
+Contacts grant is available headlessly, so no before/after timings; the signposts are there for Instruments.
+**Left undone:** the 200 cap still takes the first 200 the framework returns, then sorts.
+
+### Index pass — 2026-11-14
+
+**Landed:** supersedes the 200-card cap and the given-name sort. All contacts load once at launch (and
+after a grant) with the light keys, off-main, sorted once and held as a names-only `ContactIndex`;
+typing filters it locally and synchronously (case/diacritic-insensitive, name, nickname, company,
+email, phone digits, prefix matches first), so there is no per-keystroke Contacts call. A debounced
+reload follows `CNContactStoreDidChange`; the index is dropped when the feature is off or access is
+lost. Photos and card details stay lazy. `contacts-test` is now 91 assertions.
+**Correction:** the earlier polish pass claimed 40 harness assertions for the card model, but the
+test functions for the card, focus, monogram and maps URL were never written (a failed command chain
+skipped that edit), so they were unrun. They exist and pass now.
+**Verified:** harness, run-tests, lint, purity grep, unsigned Debug build.
+**Not verified on screen:** launch-time load duration with a large address book, the Loading state,
+list scrolling and keyboard navigation at thousands of rows, live reload after an edit in Contacts.
+**Left undone:** memory for a very large book is names, phones and emails for everyone, by design.
+
 ## Context
 
 Raycast has "Search Contacts". Upstream parked it (`docs/not-planned.md`, #1503), so this lives on

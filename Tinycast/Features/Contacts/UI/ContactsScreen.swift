@@ -19,7 +19,7 @@ struct ContactsScreen: PaletteScreen {
 
     private func contact(at selection: Int) -> Contact? {
         let rows = rows
-        return rows.indices.contains(selection) ? rows[selection] : nil
+        return rows.indices.contains(selection) ? session.resolved(rows[selection]) : nil
     }
 
     private func card(at selection: Int) -> ContactCard? {

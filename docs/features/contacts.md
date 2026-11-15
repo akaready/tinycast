@@ -17,22 +17,35 @@ upstream parked it ([not-planned.md](../not-planned.md)), so it lives on `local`
 - **Off means invisible.** `applyEnabled` hides `.searchContacts` from the launcher and ends the
   session, so with the setting off no contact is held anywhere. `showContacts` re-checks both the
   flag and the live TCC status, because Settings can revoke a grant without telling us.
-- **The list lives only while the screen does.** `ContactsSession.start` runs on appear and `end`
-  on disappear, dropping every card (and its photo). `CNContactStoreDidChange` reloads the open list
-  through a `NotificationToken` that `end` releases.
-- **A fetch is validated before it lands.** Each reload cancels the last and bumps a generation; a
-  result is applied only if its generation is still current and the task was not cancelled.
-  The fetch itself is `@concurrent` and returns `Sendable` values, never `CNContact`.
-- **Search is the system's name predicate** (`predicateForContacts(matchingName:)`); an empty query
-  lists everyone, capped at 200 cards so a large address book never loads every photo.
-- **`Model/` is pure.** `Contact`, `ContactQuery` and `ContactFormat` import only Foundation. Labels
+- **One in-memory index of everyone, names only, built at launch.** `applyEnabled` (launch, and right
+  after a grant) calls `ContactsSession.warm`, which loads every contact once with `listKeys`
+  (identifier, names, nickname, company, title, phones, emails; no photo, postal address or birthday),
+  sorts it once with `Contact.sorted` and wraps it in `ContactIndex`. There is no result cap. The
+  index is the only list state that outlives the screen; it holds no photos.
+- **Its lifetime is the feature's.** `purge` drops it, and stops the change observer, when the setting
+  turns off or access is lost (`warm` and `start` re-check the live TCC status). While the first load
+  runs the screen shows "Loading…" and fills in when it lands.
+- **`CNContactStoreDidChange` is the reload signal.** It stays registered while the index is held; a
+  burst is debounced (600 ms) and the index is rebuilt in the background while the old one keeps
+  serving. A reload is superseded by a newer one or a purge through `generation`.
+- **Photos and the rest of a card are lazy.** A row's thumbnail is fetched when it scrolls into view
+  (`thumbnail(for:)`), the open card's addresses and birthday by `card(for:)`; `details`, `thumbnails`
+  (capped at 300) and `photos` are dropped by `end`, so no photo outlives the screen. The list is a
+  `LazyVStack`, so thousands of rows cost only the visible ones.
+- **A load is validated before it lands.** The fetch is `@concurrent` and returns `Sendable` values,
+  never `CNContact`; its result is applied only if its generation is still current.
+- **Search is local and synchronous.** `ContactIndex.matching` folds case and diacritics, needs every
+  query word to match, and ranks name-word prefixes, then company-word prefixes, then name substrings,
+  then email, phone digits and other company text; ties keep alphabetical order. No keystroke calls
+  `CNContactStore`, so nothing needs cancelling.
+- **`Model/` is pure.** `Contact`, `ContactQuery`, `ContactIndex`, `ContactCard` and `ContactFormat` import only Foundation. Labels
   arrive already localised from the system; URL building, phone cleanup, address and birthday text
   live in `ContactFormat` with a harness (`Tests/contacts-test.swift`).
 
 - **Photos come from two keys, and only the open card loads the big one.** The list fetches
   `thumbnailImageData` for every row; the detail pane asks `ContactStore.photo(for:maxPixel:)` for the
   selected card's `imageData` (gated on `imageDataAvailable`), shrunk with ImageIO before it leaves the
-  service. `ContactsSession.photos` keeps a few and `end` drops them; until one arrives the thumbnail
+  service. `ContactsSession.photos` keeps a few; until one arrives the thumbnail
   stands in at the same size, so nothing moves. A card with no photo gets a monogram in a hue from
   `ContactMonogram.hue` (FNV-1a of the display name, so it is stable across launches), with
   fixed saturation and brightness under white ink; list rows and the card use the same logic.
@@ -40,6 +53,9 @@ upstream parked it ([not-planned.md](../not-planned.md)), so it lives on `local`
   row (one stop, buttons inside it) then one per field in the order phones, emails, addresses,
   birthday (`ContactCard`). Focus lives on `ContactsSession` and is reset by a selection change, a new
   query or `end`; the palette's search field keeps real focus throughout, so typing still searches.
+- **A row never changes size or text position between states.** The focus border is always drawn
+  (clear when unfocused), and the hover buttons and "Copied" share one fixed trailing slot and only
+  fade.
 - **Focus is drawn symmetrically**: a tint plus a full-perimeter border, never an edge accent.
   Animation is opacity only and is dropped under Reduce Motion.
 
@@ -71,7 +87,8 @@ menu has no submenus, so the choice is made by picking the row rather than a sec
 | Piece                  | File                                         |
 | ---------------------- | -------------------------------------------- |
 | Consent, command, row actions | `UI/ContactsCoordinator.swift`        |
-| Open-screen list state | `UI/ContactsSession.swift`                   |
+| Index, screen state    | `UI/ContactsSession.swift`                   |
+| In-memory index and filter | `Model/ContactIndex.swift`               |
 | Screen, keyboard, ⌘K menu | `UI/ContactsScreen.swift`                 |
 | Field and button actions, labels | `UI/ContactCardLabels.swift`       |
 | List and detail pane   | `UI/ContactsView.swift`                      |
