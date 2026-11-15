@@ -17,23 +17,28 @@ upstream parked it ([not-planned.md](../not-planned.md)), so it lives on `local`
 - **Off means invisible.** `applyEnabled` hides `.searchContacts` from the launcher and ends the
   session, so with the setting off no contact is held anywhere. `showContacts` re-checks both the
   flag and the live TCC status, because Settings can revoke a grant without telling us.
-- **Rows are names only, and photos arrive lazily.** The list fetch uses `listKeys` (names, company,
-  title, phones, emails): no thumbnail, postal address or birthday. The open card's rest comes from
-  `ContactStore.card(for:)` and a row's avatar from `thumbnail(for:)` when the row scrolls into view;
-  `ContactsSession.details`, `thumbnails` and `photos` are dropped by `end`, so no photo outlives the screen.
-- **One warm list outlives the screen, names only.** The empty-query list is kept in `browseCache` so
-  the next open shows at once with no refetch. The `CNContactStoreDidChange` observer stays registered
-  while it is held and discards it on any edit; `purge` (feature off, or access gone) drops both.
-  A query is never cached. `end` drops everything else.
-- **A fetch is validated before it lands.** Each reload cancels the last and bumps a generation; a
-  result is applied only if its generation is still current and the task was not cancelled.
-  The fetch itself is `@concurrent` and returns `Sendable` values, never `CNContact`.
-- **Search is the system's name predicate** (`predicateForContacts(matchingName:)`); an empty query
-  lists everyone, capped at 200 cards. The enumeration is ordered by given name (`sortOrder`) and stops
-  at the cap, so the 200 are the first alphabetically, not an arbitrary slice; `Contact.sorted` then
-  fixes the display order (it sorts by display name, so a company-only card can sit differently from
-  the framework's order near the cut).
-- **`Model/` is pure.** `Contact`, `ContactQuery` and `ContactFormat` import only Foundation. Labels
+- **One in-memory index of everyone, names only, built at launch.** `applyEnabled` (launch, and right
+  after a grant) calls `ContactsSession.warm`, which loads every contact once with `listKeys`
+  (identifier, names, nickname, company, title, phones, emails; no photo, postal address or birthday),
+  sorts it once with `Contact.sorted` and wraps it in `ContactIndex`. There is no result cap. The
+  index is the only list state that outlives the screen; it holds no photos.
+- **Its lifetime is the feature's.** `purge` drops it, and stops the change observer, when the setting
+  turns off or access is lost (`warm` and `start` re-check the live TCC status). While the first load
+  runs the screen shows "Loading…" and fills in when it lands.
+- **`CNContactStoreDidChange` is the reload signal.** It stays registered while the index is held; a
+  burst is debounced (600 ms) and the index is rebuilt in the background while the old one keeps
+  serving. A reload is superseded by a newer one or a purge through `generation`.
+- **Photos and the rest of a card are lazy.** A row's thumbnail is fetched when it scrolls into view
+  (`thumbnail(for:)`), the open card's addresses and birthday by `card(for:)`; `details`, `thumbnails`
+  (capped at 300) and `photos` are dropped by `end`, so no photo outlives the screen. The list is a
+  `LazyVStack`, so thousands of rows cost only the visible ones.
+- **A load is validated before it lands.** The fetch is `@concurrent` and returns `Sendable` values,
+  never `CNContact`; its result is applied only if its generation is still current.
+- **Search is local and synchronous.** `ContactIndex.matching` folds case and diacritics, needs every
+  query word to match, and ranks name-word prefixes, then company-word prefixes, then name substrings,
+  then email, phone digits and other company text; ties keep alphabetical order. No keystroke calls
+  `CNContactStore`, so nothing needs cancelling.
+- **`Model/` is pure.** `Contact`, `ContactQuery`, `ContactIndex`, `ContactCard` and `ContactFormat` import only Foundation. Labels
   arrive already localised from the system; URL building, phone cleanup, address and birthday text
   live in `ContactFormat` with a harness (`Tests/contacts-test.swift`).
 
@@ -82,7 +87,8 @@ menu has no submenus, so the choice is made by picking the row rather than a sec
 | Piece                  | File                                         |
 | ---------------------- | -------------------------------------------- |
 | Consent, command, row actions | `UI/ContactsCoordinator.swift`        |
-| Open-screen list state | `UI/ContactsSession.swift`                   |
+| Index, screen state    | `UI/ContactsSession.swift`                   |
+| In-memory index and filter | `Model/ContactIndex.swift`               |
 | Screen, keyboard, ⌘K menu | `UI/ContactsScreen.swift`                 |
 | Field and button actions, labels | `UI/ContactCardLabels.swift`       |
 | List and detail pane   | `UI/ContactsView.swift`                      |

@@ -1,6 +1,6 @@
 import Foundation
 
-/// The open Contacts screen's list: it exists only while the screen is up, so no card outlives it.
+/// The Contacts index and the open screen's state; photos and card details live only while it is up.
 @MainActor
 @Observable
 final class ContactsSession {
@@ -23,55 +23,41 @@ final class ContactsSession {
     private(set) var thumbnails: [String: Data] = [:]
 
     @ObservationIgnored private var loading: Task<Void, Never>?
-    /// Bumped per fetch, so an answer to an older query can tell it is no longer wanted.
+    @ObservationIgnored private var debounce: Task<Void, Never>?
+    /// Bumped on every load and purge, so a load that finishes after either can tell it is unwanted.
     @ObservationIgnored private var generation = 0
     @ObservationIgnored private var isRunning = false
-    @ObservationIgnored private var copyReset: Task<Void, Never>?
-    /// The browse list, kept between opens so the screen appears at once; names only, no photos.
-    @ObservationIgnored private var browseCache: [Contact]?
     @ObservationIgnored private var isObserving = false
+    @ObservationIgnored private var copyReset: Task<Void, Never>?
+    /// Everyone, names only: filtered in memory per keystroke, rebuilt when the address book changes.
+    @ObservationIgnored private var index: ContactIndex?
 
     /// A few cards at a time: the photos are full size, and only the open card needs one.
     private static let photoCacheLimit = 8
+    private static let thumbnailCacheLimit = 300
+    /// Edits arrive in bursts (a sync can touch hundreds of cards), so the reload waits them out.
+    private static let reloadDelay: Duration = .milliseconds(600)
 
     init(store: ContactStore) {
         self.store = store
     }
 
-    func start(query raw: String) {
-        isRunning = true
-        query = ContactQuery.normalized(raw)
+    /// Builds the index in the background; called at launch and after a grant, so the screen is ready.
+    func warm() {
         store.refreshAccess()
         guard store.access == .granted else {
             purge()
-            reload()
             return
         }
         observeOnce()
-        if query.isEmpty, let browseCache {
-            contacts = browseCache
-            phase = .loaded
-            return
-        }
-        reload()
+        if index == nil { load() }
     }
 
-    /// Drops the warm list and stops watching; used when the feature goes off or access is gone.
-    func purge() {
-        browseCache = nil
-        store.stopObserving()
-        isObserving = false
-    }
-
-    /// Stays registered after `end` while a warm list exists, so an edit elsewhere still discards it.
-    private func observeOnce() {
-        guard !isObserving else { return }
-        isObserving = true
-        store.observeChanges { [weak self] in
-            guard let self else { return }
-            browseCache = nil
-            if isRunning { reload() }
-        }
+    func start(query raw: String) {
+        isRunning = true
+        query = ContactQuery.normalized(raw)
+        warm()
+        refresh()
     }
 
     func setQuery(_ raw: String) {
@@ -79,14 +65,11 @@ final class ContactsSession {
         guard next != query else { return }
         focus.leave()
         query = next
-        reload()
+        refresh()
     }
 
     func end() {
         isRunning = false
-        generation += 1
-        loading?.cancel()
-        loading = nil
         copyReset?.cancel()
         copiedID = nil
         focus.leave()
@@ -95,6 +78,61 @@ final class ContactsSession {
         thumbnails = [:]
         contacts = []
         phase = .loading
+    }
+
+    /// Drops the index and stops watching: the feature is off, or access is gone.
+    func purge() {
+        generation += 1
+        loading?.cancel()
+        loading = nil
+        debounce?.cancel()
+        debounce = nil
+        index = nil
+        store.stopObserving()
+        isObserving = false
+        contacts = []
+        phase = .loaded
+    }
+
+    private func observeOnce() {
+        guard !isObserving else { return }
+        isObserving = true
+        store.observeChanges { [weak self] in self?.scheduleReload() }
+    }
+
+    private func scheduleReload() {
+        debounce?.cancel()
+        debounce = Task {
+            try? await Task.sleep(for: Self.reloadDelay)
+            guard !Task.isCancelled else { return }
+            loading?.cancel()
+            loading = nil
+            load()
+        }
+    }
+
+    private func load() {
+        guard loading == nil else { return }
+        generation += 1
+        let mine = generation
+        loading = Task {
+            let found = await store.allContacts()
+            guard mine == generation, !Task.isCancelled else { return }
+            loading = nil
+            index = ContactIndex(found)
+            if isRunning { refresh() }
+        }
+    }
+
+    private func refresh() {
+        guard isRunning else { return }
+        if let index {
+            contacts = index.matching(query)
+            phase = .loaded
+        } else {
+            contacts = []
+            phase = store.access == .granted ? .loading : .loaded
+        }
     }
 
     func updateFocus(_ change: (inout ContactCardFocus) -> Void) {
@@ -115,6 +153,7 @@ final class ContactsSession {
     func loadThumbnail(for id: String) async {
         guard isRunning, thumbnails[id] == nil else { return }
         guard let data = await store.thumbnail(for: id), isRunning else { return }
+        if thumbnails.count >= Self.thumbnailCacheLimit { thumbnails = [:] }
         thumbnails[id] = data
     }
 
@@ -132,25 +171,6 @@ final class ContactsSession {
             try? await Task.sleep(for: .seconds(Theme.Duration.copyFeedback))
             guard !Task.isCancelled else { return }
             copiedID = nil
-        }
-    }
-
-    private func reload() {
-        guard isRunning, store.access == .granted else {
-            contacts = []
-            phase = .loaded
-            return
-        }
-        loading?.cancel()
-        generation += 1
-        let mine = generation
-        let asked = query
-        loading = Task {
-            let found = await store.contacts(matching: asked)
-            guard mine == generation, !Task.isCancelled else { return }
-            contacts = found
-            if asked.isEmpty { browseCache = found }
-            phase = .loaded
         }
     }
 }

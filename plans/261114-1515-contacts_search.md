@@ -58,6 +58,22 @@ and discarded by `CNContactStoreDidChange`; signposts (`ContactsEnumerate`, `Con
 Contacts grant is available headlessly, so no before/after timings; the signposts are there for Instruments.
 **Left undone:** the 200 cap still takes the first 200 the framework returns, then sorts.
 
+### Index pass — 2026-11-14
+
+**Landed:** supersedes the 200-card cap and the given-name sort. All contacts load once at launch (and
+after a grant) with the light keys, off-main, sorted once and held as a names-only `ContactIndex`;
+typing filters it locally and synchronously (case/diacritic-insensitive, name, nickname, company,
+email, phone digits, prefix matches first), so there is no per-keystroke Contacts call. A debounced
+reload follows `CNContactStoreDidChange`; the index is dropped when the feature is off or access is
+lost. Photos and card details stay lazy. `contacts-test` is now 91 assertions.
+**Correction:** the earlier polish pass claimed 40 harness assertions for the card model, but the
+test functions for the card, focus, monogram and maps URL were never written (a failed command chain
+skipped that edit), so they were unrun. They exist and pass now.
+**Verified:** harness, run-tests, lint, purity grep, unsigned Debug build.
+**Not verified on screen:** launch-time load duration with a large address book, the Loading state,
+list scrolling and keyboard navigation at thousands of rows, live reload after an edit in Contacts.
+**Left undone:** memory for a very large book is names, phones and emails for everyone, by design.
+
 ## Context
 
 Raycast has "Search Contacts". Upstream parked it (`docs/not-planned.md`, #1503), so this lives on

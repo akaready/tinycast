@@ -11,9 +11,6 @@ final class ContactStore {
 
     @ObservationIgnored private var changeObserver: NotificationToken?
 
-    /// A browse list stops here: a card photo each makes an unbounded list expensive to hold.
-    nonisolated private static let resultLimit = 200
-
     /// TCC sends nothing when a grant changes in Settings, so anything acting on `access` re-reads.
     func refreshAccess() {
         access = Permissions.contactsAccess()
@@ -41,32 +38,21 @@ final class ContactStore {
         changeObserver = nil
     }
 
-    /// Everyone for an empty query, else the cards whose name matches; sorted for display.
+    /// Everyone, light keys only, sorted once; the in-memory index is built from this.
     @concurrent
-    func contacts(matching query: String) async -> [Contact] {
+    func allContacts() async -> [Contact] {
         let store = CNContactStore()
-        let keys = Self.listKeys()
-        var found: [CNContact] = []
-        if query.isEmpty {
-            let request = CNContactFetchRequest(keysToFetch: keys)
-            request.unifyResults = true
-            request.sortOrder = .givenName
-            Signposts.interval("ContactsEnumerate") {
-                try? store.enumerateContacts(with: request) { contact, stop in
-                    found.append(contact)
-                    if found.count >= Self.resultLimit || Task.isCancelled { stop.pointee = true }
-                }
-            }
-        } else {
-            let predicate = CNContact.predicateForContacts(matchingName: query)
-            found = Signposts.interval("ContactsSearch") {
-                (try? store.unifiedContacts(matching: predicate, keysToFetch: keys)) ?? []
+        let request = CNContactFetchRequest(keysToFetch: Self.listKeys())
+        request.unifyResults = true
+        var found: [Contact] = []
+        Signposts.interval("ContactsEnumerate") {
+            try? store.enumerateContacts(with: request) { contact, stop in
+                found.append(Self.contact(from: contact))
+                if Task.isCancelled { stop.pointee = true }
             }
         }
         guard !Task.isCancelled else { return [] }
-        return Signposts.interval("ContactsMap") {
-            Contact.sorted(found.prefix(Self.resultLimit).map(Self.contact(from:)))
-        }
+        return Signposts.interval("ContactsSort") { Contact.sorted(found) }
     }
 
     /// The rest of one card (addresses, birthday, thumbnail), fetched only for the card being read.
