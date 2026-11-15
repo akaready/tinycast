@@ -232,6 +232,17 @@ enum CommandID: String, CaseIterable, Sendable {
         }
     }
 
+    /// Takes the palette over with a search field of its own, so there is more to type once it opens.
+    var opensSearchScreen: Bool {
+        switch self {
+        case .quickAI, .calculatorHistory, .clipboardHistory, .searchEmoji, .searchFiles,
+            .searchMenuItems, .switchWindows, .define, .mySchedule, .searchContacts,
+            .searchQuicklinks, .searchSnippets, .searchCustomCommands, .switchRoom, .store:
+            true
+        default: false
+        }
+    }
+
     /// Query-driven: the typed text is their input, so they are built where offered, never listed.
     var isQueryDriven: Bool {
         self == .openInBrowser || self == .runShellCommand

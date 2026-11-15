@@ -115,6 +115,7 @@ If a change touches anything in the right column, the harness on the left is man
 | `app-installation-test` | Multiple app copies and app-wide preferences; file-favorite persistence, mixed ordering, hidden slots and restoration through the existing favorite key list |
 | `ranking-test` | `Launcher/Model/LauncherRankingStore.swift` |
 | `scopes-test` | `Launcher/Model/SearchScopes.swift` |
+| `alias-engage-test` | `Launcher/Model/AliasEngage.swift` — what Space does after an exact alias: only a whole-query hit, only with the setting on, never while composing or with a menu or control list open |
 | `app-name-test` | `Platform/AppDisplayName.swift` — every path that names a scanned bundle |
 | `language-test` | `AppLanguage` and both string catalogs — compile every language, load privacy prompts, and select plural forms and independent counts at runtime |
 | `localized-resource-test` | `Platform/LocalizedResource.swift` — `resolved()` matches `String(localized:)` in every language, for plain, contextual, interpolated, plural and missing keys |

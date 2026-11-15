@@ -130,6 +130,7 @@ run index file-search-performance $FS/Model/*.swift $FILE_INDEX
 run ranking-test           $L/SearchRelevance.swift $L/ScriptRomanization.swift \
                            $L/LauncherMatch.swift $L/LauncherRankingStore.swift
 run scopes-test            $L/SearchScopes.swift
+run alias-engage-test      $L/AliasEngage.swift
 run app-name-test          Tinycast/Platform/AppDisplayName.swift \
                            Tinycast/Platform/BundleLocalization.swift \
                            $L/SearchRelevance.swift
