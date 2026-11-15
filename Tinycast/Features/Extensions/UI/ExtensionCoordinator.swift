@@ -337,6 +337,14 @@ final class ExtensionCoordinator {
         extensions.setMenuBarEnabled(enabled, reference: reference)
     }
 
+    /// A view command takes the palette over; a no-view or menu-bar one runs headless.
+    func opensScreen(_ entry: AppEntry) -> Bool {
+        guard entry.kind == .extensionCommand, let (_, command) = extensions.resolve(entry) else {
+            return false
+        }
+        return command.mode == .view
+    }
+
     func commandArguments(for entry: AppEntry?) -> [ExtensionCommandArgument]? {
         guard let entry, entry.kind == .extensionCommand,
             let (_, command) = extensions.resolve(entry), !command.arguments.isEmpty

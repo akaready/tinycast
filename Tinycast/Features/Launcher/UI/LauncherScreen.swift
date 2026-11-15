@@ -267,6 +267,22 @@ struct LauncherScreen: PaletteScreen {
         }
     }
 
+    /// What Space does after an exact alias; the selected row must be the entry that owns it.
+    func aliasAction(at selection: Int, hasArgumentFields: Bool) -> AliasEngage.Action? {
+        guard case .entry(let app) = row(at: selection) else { return nil }
+        let opensScreen =
+            switch app.kind {
+            case .command: CommandCatalog.command(for: app)?.opensSearchScreen ?? false
+            case .extensionCommand: core.extensionCoordinator.opensScreen(app)
+            default: false
+            }
+        return AliasEngage.action(
+            enabled: core.settings.aliasSpaceEngages, query: vm.query,
+            alias: core.aliases.alias(for: app.preferenceKey),
+            hasArgumentFields: hasArgumentFields, opensScreen: opensScreen,
+            isComposing: vm.isComposing, menuOpen: vm.menuOpen, controlListOpen: vm.isControlListOpen)
+    }
+
     func activate(at selection: Int) {
         switch row(at: selection) {
         // Error cards no-op — copyCalculatorResult only acts on value payloads.

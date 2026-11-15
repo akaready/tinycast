@@ -121,6 +121,10 @@ struct GeneralSettingsView: View {
                     SettingsRowTitle(.generalSearch, "Show suggestions")
                     Text("Shows your most-used items when the search field is empty.")
                 }
+                Toggle(isOn: $settings.aliasSpaceEngages) {
+                    SettingsRowTitle(.generalSearch, "Space after an alias opens it")
+                    Text("Typing an alias and pressing Space enters a command that takes more input.")
+                }
                 Picker(selection: $settings.rootSearchSensitivity) {
                     ForEach(SearchSensitivity.allCases) { sensitivity in
                         Text(sensitivity.title).tag(sensitivity)
