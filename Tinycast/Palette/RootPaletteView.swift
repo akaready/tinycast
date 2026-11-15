@@ -624,6 +624,7 @@ struct RootPaletteView: View {
                 // An open control list owns Escape before the palette beneath it.
                 if vm.isControlListOpen { return .ignored }
                 if vm.isComposing, !menuOpen { return .ignored }
+                if !menuOpen, !isCollapsed, screen.escape(at: selection(in: screen)) { return .handled }
                 switch PaletteEscapeAction.resolve(
                     menuOpen: menuOpen, menuQuery: vm.menuQuery,
                     argumentFocused: argumentFocused != nil, query: vm.query, mode: vm.mode,

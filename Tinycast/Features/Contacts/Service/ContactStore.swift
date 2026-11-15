@@ -1,5 +1,7 @@
 import Contacts
 import Foundation
+import ImageIO
+import UniformTypeIdentifiers
 
 /// The only reader of Contacts: read-only, and notes are never requested.
 @MainActor
@@ -58,6 +60,35 @@ final class ContactStore {
         }
         guard !Task.isCancelled else { return [] }
         return Contact.sorted(found.prefix(Self.resultLimit).map(Self.contact(from:)))
+    }
+
+    /// The full-size photo of one card, shrunk to what the detail pane can show; nil when it has none.
+    @concurrent
+    func photo(for id: String, maxPixel: Int) async -> Data? {
+        let keys = [CNContactImageDataKey, CNContactImageDataAvailableKey] as [any CNKeyDescriptor]
+        guard let card = try? CNContactStore().unifiedContact(withIdentifier: id, keysToFetch: keys),
+            card.imageDataAvailable, let data = card.imageData, !Task.isCancelled
+        else { return nil }
+        return Self.downsampled(data, maxPixel: maxPixel) ?? data
+    }
+
+    nonisolated private static func downsampled(_ data: Data, maxPixel: Int) -> Data? {
+        let options: [CFString: Any] = [
+            kCGImageSourceCreateThumbnailFromImageAlways: true,
+            kCGImageSourceCreateThumbnailWithTransform: true,
+            kCGImageSourceThumbnailMaxPixelSize: maxPixel
+        ]
+        guard let source = CGImageSourceCreateWithData(data as CFData, nil),
+            let image = CGImageSourceCreateThumbnailAtIndex(source, 0, options as CFDictionary)
+        else { return nil }
+        let output = NSMutableData()
+        guard
+            let target = CGImageDestinationCreateWithData(
+                output, UTType.jpeg.identifier as CFString, 1, nil)
+        else { return nil }
+        CGImageDestinationAddImage(
+            target, image, [kCGImageDestinationLossyCompressionQuality: 0.9] as CFDictionary)
+        return CGImageDestinationFinalize(target) ? output as Data : nil
     }
 
     nonisolated private static func keys() -> [any CNKeyDescriptor] {

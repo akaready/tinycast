@@ -89,6 +89,12 @@ final class ContactsCoordinator {
         core.showMessage(message)
     }
 
+    /// A card's own copy keeps the palette up, so the value can be followed by another.
+    func copyInCard(_ text: String, id: String) {
+        guard Paster.copyPlainText(text) else { return }
+        session.flashCopied(id)
+    }
+
     func open(_ url: URL?) {
         guard let url else { return }
         paletteCoordinator.hidePalette(restoreFocus: false)
