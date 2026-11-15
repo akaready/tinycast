@@ -29,7 +29,10 @@ upstream parked it ([not-planned.md](../not-planned.md)), so it lives on `local`
   result is applied only if its generation is still current and the task was not cancelled.
   The fetch itself is `@concurrent` and returns `Sendable` values, never `CNContact`.
 - **Search is the system's name predicate** (`predicateForContacts(matchingName:)`); an empty query
-  lists everyone, capped at 200 cards so a large address book never loads every photo.
+  lists everyone, capped at 200 cards. The enumeration is ordered by given name (`sortOrder`) and stops
+  at the cap, so the 200 are the first alphabetically, not an arbitrary slice; `Contact.sorted` then
+  fixes the display order (it sorts by display name, so a company-only card can sit differently from
+  the framework's order near the cut).
 - **`Model/` is pure.** `Contact`, `ContactQuery` and `ContactFormat` import only Foundation. Labels
   arrive already localised from the system; URL building, phone cleanup, address and birthday text
   live in `ContactFormat` with a harness (`Tests/contacts-test.swift`).

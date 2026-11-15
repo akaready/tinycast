@@ -50,6 +50,7 @@ final class ContactStore {
         if query.isEmpty {
             let request = CNContactFetchRequest(keysToFetch: keys)
             request.unifyResults = true
+            request.sortOrder = .givenName
             Signposts.interval("ContactsEnumerate") {
                 try? store.enumerateContacts(with: request) { contact, stop in
                     found.append(contact)
