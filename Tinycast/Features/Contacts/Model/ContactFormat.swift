@@ -30,6 +30,17 @@ enum ContactFormat {
         URL(string: "addressbook://" + id)
     }
 
+    /// Maps opens on a search for the address, whatever line breaks it was stored with.
+    static func mapsURL(_ address: String) -> URL? {
+        let query = oneLine(address)
+        var allowed = CharacterSet.urlQueryAllowed
+        allowed.remove(charactersIn: "&+=#")
+        guard let encoded = query.addingPercentEncoding(withAllowedCharacters: allowed),
+            !encoded.isEmpty
+        else { return nil }
+        return URL(string: "maps://?q=" + encoded)
+    }
+
     /// A postal address is stored one line per part; a row shows it as a single line.
     static func oneLine(_ address: String) -> String {
         address.split(whereSeparator: \.isNewline)
