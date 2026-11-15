@@ -1,7 +1,7 @@
 # Contacts
 
 One launcher command, **Search Contacts**, that opens a palette screen over the Mac's address book:
-a search field, a list, and a detail pane (phones, emails, addresses, birthday, photo). Actions copy a
+a search field, a list, and a detail pane (photo, quick actions, phones, emails, addresses, birthday). Actions copy a
 value, write an email, message or FaceTime a number, or open the card in Contacts.app. Fork-only:
 upstream parked it ([not-planned.md](../not-planned.md)), so it lives on `local` and is never sent upstream.
 
@@ -29,13 +29,39 @@ upstream parked it ([not-planned.md](../not-planned.md)), so it lives on `local`
   arrive already localised from the system; URL building, phone cleanup, address and birthday text
   live in `ContactFormat` with a harness (`Tests/contacts-test.swift`).
 
+- **Photos come from two keys, and only the open card loads the big one.** The list fetches
+  `thumbnailImageData` for every row; the detail pane asks `ContactStore.photo(for:maxPixel:)` for the
+  selected card's `imageData` (gated on `imageDataAvailable`), shrunk with ImageIO before it leaves the
+  service. `ContactsSession.photos` keeps a few and `end` drops them; until one arrives the thumbnail
+  stands in at the same size, so nothing moves. A card with no photo gets a monogram in a hue from
+  `ContactMonogram.hue` (FNV-1a of the display name, so it is stable across launches), with
+  fixed saturation and brightness under white ink; list rows and the card use the same logic.
+- **The card is a keyboard set, and `ContactCardFocus` is its whole model.** Stops are the quick-action
+  row (one stop, buttons inside it) then one per field in the order phones, emails, addresses,
+  birthday (`ContactCard`). Focus lives on `ContactsSession` and is reset by a selection change, a new
+  query or `end`; the palette's search field keeps real focus throughout, so typing still searches.
+- **Focus is drawn symmetrically**: a tint plus a full-perimeter border, never an edge accent.
+  Animation is opacity only and is dropped under Reduce Motion.
+
 ## Actions
+
+Keyboard in the card (the footer pill and the key hints under the card follow the focused stop):
+
+| Key        | In the list                              | On the card                                          |
+| ---------- | ---------------------------------------- | ---------------------------------------------------- |
+| ⇥ or →     | Enter the card (→ only on an empty query) | ⇥ next stop, past the last back to the list; → next quick action |
+| ↑ ↓        | Move the selection                       | Previous or next stop (clamped)                      |
+| ← or Esc   | Caret / palette back                     | Back to the list (← steps left inside the quick row first) |
+| ↵          | Open in Contacts                         | Phone: Message. Email: compose. Address: Open in Maps. Birthday: copy. Quick row: that button |
+| ⌘↵         | Copy name (closes)                       | Copy the value and show "Copied" inline (palette stays open) |
+| ⌘K         | The contact's actions                    | That field's actions                                 |
+
 
 | Key  | Action                              |
 | ---- | ----------------------------------- |
 | ↵    | Open in Contacts (`addressbook://`) |
 | ⌘↵   | Copy name                           |
-| ⌘K   | Message, FaceTime and Copy Phone Number per number; Send Email and Copy Email per address; Copy Address per address |
+| ⌘K   | Message, FaceTime and Copy Phone Number per number; Send Email and Copy Email per address; Copy Address per address (with a field focused: Message, FaceTime, Call, Copy for a number; Send Email, Copy; Open in Maps, Copy) |
 
 A card with several values gets one row per value, each stating its label and the value. The palette
 menu has no submenus, so the choice is made by picking the row rather than a second level.
@@ -46,8 +72,10 @@ menu has no submenus, so the choice is made by picking the row rather than a sec
 | ---------------------- | -------------------------------------------- |
 | Consent, command, row actions | `UI/ContactsCoordinator.swift`        |
 | Open-screen list state | `UI/ContactsSession.swift`                   |
-| Screen, ⌘K menu        | `UI/ContactsScreen.swift`                    |
+| Screen, keyboard, ⌘K menu | `UI/ContactsScreen.swift`                 |
+| Field and button actions, labels | `UI/ContactCardLabels.swift`       |
 | List and detail pane   | `UI/ContactsView.swift`                      |
+| Card stops, focus, monogram hue | `Model/ContactCard.swift`           |
 | `CNContactStore` wrapper | `Service/ContactStore.swift`               |
 | Settings pane          | `Settings/ContactsSettingsView.swift`        |
 | Permission shim        | `Platform/Permissions.swift` (`contactsAccess`) |
