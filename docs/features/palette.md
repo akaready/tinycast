@@ -598,6 +598,14 @@ screen opened with a carried query (the Search Files fallback) came up with that
 IME's composition and any other focused field — the inline argument fields, an extension form — are
 left alone: the handler returns `.ignored` for them, and their own `onSubmit` still commits.
 
+## Space after an alias
+
+A bare Space is an `onKeyPress(.space)` handler in `RootPaletteView`, ahead of the field's own insertion.
+`engageAliasOnSpace` returns `.handled` only when `AliasEngage.action` says the root search's selected row
+is an exact-alias hit that takes more input, so every other Space reaches the field untouched. It is
+gated on the setting, the search field holding focus, and no menu open. See
+[launcher.md](launcher.md#user-aliases).
+
 ## The query is one line
 
 A paste, a drop or ⌥↵ can put line breaks into the search field, which then wraps its text out of

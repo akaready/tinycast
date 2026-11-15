@@ -406,6 +406,28 @@ Commands passes `CustomCommand.entryID`, Settings ▸ Extensions passes `extensi
 Settings ▸ Window Management passes each command, custom size, layout and room's `AppEntry`, and each
 dims the field when the entry is hidden from launcher search, whose entry the ranker never sees.
 
+**Space after an alias** (`AppSettings.aliasSpaceEngages`, General ▸ Search, off by default) lets the
+launcher answer Raycast-style: type an alias and press Space, and the entry opens as ↵ would, with
+nothing typed after it. The decision is `AliasEngage.action` (`Launcher/Model/`), and
+`RootPaletteView.engageAliasOnSpace` carries it out from an `onKeyPress(.space)` handler. It fires only
+when the **whole query** equals the selected row's own alias, ignoring case — a prefix, a fuzzy hit,
+or any text after the alias leaves Space an ordinary space. The row has to be the entry that owns the
+alias, so a hidden or disabled entry, which the ranker never lists, cannot engage. It never fires
+while an IME is composing, a menu or control list is open, the search field lacks focus, or the bar is
+compact. What it does depends on the entry:
+
+- **Takes typed values** (a quicklink with placeholders, a custom command with arguments, an extension
+  command with arguments): focus moves to the first inline argument field. Nothing runs, even when every
+  argument is optional.
+- **Opens a screen** (`CommandID.opensSearchScreen` — Contacts, Clipboard History, Search Files and the
+  other search commands — and an extension view command): `activate`, exactly as ↵, so the screen opens
+  with an empty query.
+- **Anything else** (an application, a no-input command, a quicklink without placeholders, a snippet): Space
+  types a space. Launching an app because a word happened to equal its alias would be the accident the
+  setting is meant to avoid.
+
+It is a plain preference: it rides in a settings backup and in `settings.json` (`search.spaceAfterAlias`).
+
 Aliases ride along in a settings backup (`launcherAliases`), and deleting what an alias points at —
 uninstalling an app, deleting a quicklink or custom command, uninstalling an extension — removes it
 with the entry's other per-entry preferences.

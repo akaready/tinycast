@@ -620,6 +620,10 @@ struct RootPaletteView: View {
                 if command { return screen.secondary(at: selection) ? .handled : .ignored }
                 return screen.pasteKeepingWindowOpen(at: selection) ? .handled : .ignored
             }
+            .onKeyPress(.space, phases: .down) { press in
+                guard press.modifiers.isEmpty else { return .ignored }
+                return engageAliasOnSpace() ? .handled : .ignored
+            }
             .onKeyPress(.escape) {
                 // An open control list owns Escape before the palette beneath it.
                 if vm.isControlListOpen { return .ignored }
@@ -1600,6 +1604,25 @@ struct RootPaletteView: View {
             return
         }
         if !vm.pop() { core.paletteCoordinator.hidePalette() }
+    }
+
+    /// True when Space was an alias engaging its entry; otherwise the field types the space.
+    private func engageAliasOnSpace() -> Bool {
+        guard vm.mode == .launcher, !isCollapsed, searchFocused, !menuOpen,
+            let launcher = screen as? LauncherScreen
+        else { return false }
+        let selection = selection(in: launcher)
+        let fields = launcher.headerAccessory(at: selection, focus: $argumentFocused)?.fieldNames ?? []
+        switch launcher.aliasAction(at: selection, hasArgumentFields: !fields.isEmpty) {
+        case .focusArguments:
+            argumentFocused = fields.first
+            searchFocused = false
+        case .open:
+            launcher.activate(at: selection)
+        case nil:
+            return false
+        }
+        return true
     }
 
     private func activateSelection() {
