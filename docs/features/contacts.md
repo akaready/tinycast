@@ -17,9 +17,14 @@ upstream parked it ([not-planned.md](../not-planned.md)), so it lives on `local`
 - **Off means invisible.** `applyEnabled` hides `.searchContacts` from the launcher and ends the
   session, so with the setting off no contact is held anywhere. `showContacts` re-checks both the
   flag and the live TCC status, because Settings can revoke a grant without telling us.
-- **The list lives only while the screen does.** `ContactsSession.start` runs on appear and `end`
-  on disappear, dropping every card (and its photo). `CNContactStoreDidChange` reloads the open list
-  through a `NotificationToken` that `end` releases.
+- **Rows are names only, and photos arrive lazily.** The list fetch uses `listKeys` (names, company,
+  title, phones, emails): no thumbnail, postal address or birthday. The open card's rest comes from
+  `ContactStore.card(for:)` and a row's avatar from `thumbnail(for:)` when the row scrolls into view;
+  `ContactsSession.details`, `thumbnails` and `photos` are dropped by `end`, so no photo outlives the screen.
+- **One warm list outlives the screen, names only.** The empty-query list is kept in `browseCache` so
+  the next open shows at once with no refetch. The `CNContactStoreDidChange` observer stays registered
+  while it is held and discards it on any edit; `purge` (feature off, or access gone) drops both.
+  A query is never cached. `end` drops everything else.
 - **A fetch is validated before it lands.** Each reload cancels the last and bumps a generation; a
   result is applied only if its generation is still current and the task was not cancelled.
   The fetch itself is `@concurrent` and returns `Sendable` values, never `CNContact`.
@@ -32,7 +37,7 @@ upstream parked it ([not-planned.md](../not-planned.md)), so it lives on `local`
 - **Photos come from two keys, and only the open card loads the big one.** The list fetches
   `thumbnailImageData` for every row; the detail pane asks `ContactStore.photo(for:maxPixel:)` for the
   selected card's `imageData` (gated on `imageDataAvailable`), shrunk with ImageIO before it leaves the
-  service. `ContactsSession.photos` keeps a few and `end` drops them; until one arrives the thumbnail
+  service. `ContactsSession.photos` keeps a few; until one arrives the thumbnail
   stands in at the same size, so nothing moves. A card with no photo gets a monogram in a hue from
   `ContactMonogram.hue` (FNV-1a of the display name, so it is stable across launches), with
   fixed saturation and brightness under white ink; list rows and the card use the same logic.
@@ -40,6 +45,9 @@ upstream parked it ([not-planned.md](../not-planned.md)), so it lives on `local`
   row (one stop, buttons inside it) then one per field in the order phones, emails, addresses,
   birthday (`ContactCard`). Focus lives on `ContactsSession` and is reset by a selection change, a new
   query or `end`; the palette's search field keeps real focus throughout, so typing still searches.
+- **A row never changes size or text position between states.** The focus border is always drawn
+  (clear when unfocused), and the hover buttons and "Copied" share one fixed trailing slot and only
+  fade.
 - **Focus is drawn symmetrically**: a tint plus a full-perimeter border, never an edge accent.
   Animation is opacity only and is dropped under Reduce Motion.
 

@@ -66,7 +66,10 @@ final class ContactsCoordinator {
 
     func applyEnabled() {
         appIndex.setCommandsVisible([.searchContacts], settings.contactsEnabled)
-        if !settings.contactsEnabled { session.end() }
+        if !settings.contactsEnabled {
+            session.end()
+            session.purge()
+        }
     }
 
     // MARK: - Commands

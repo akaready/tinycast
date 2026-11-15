@@ -45,21 +45,44 @@ final class ContactStore {
     @concurrent
     func contacts(matching query: String) async -> [Contact] {
         let store = CNContactStore()
-        let keys = Self.keys()
+        let keys = Self.listKeys()
         var found: [CNContact] = []
         if query.isEmpty {
             let request = CNContactFetchRequest(keysToFetch: keys)
             request.unifyResults = true
-            try? store.enumerateContacts(with: request) { contact, stop in
-                found.append(contact)
-                if found.count >= Self.resultLimit || Task.isCancelled { stop.pointee = true }
+            Signposts.interval("ContactsEnumerate") {
+                try? store.enumerateContacts(with: request) { contact, stop in
+                    found.append(contact)
+                    if found.count >= Self.resultLimit || Task.isCancelled { stop.pointee = true }
+                }
             }
         } else {
             let predicate = CNContact.predicateForContacts(matchingName: query)
-            found = (try? store.unifiedContacts(matching: predicate, keysToFetch: keys)) ?? []
+            found = Signposts.interval("ContactsSearch") {
+                (try? store.unifiedContacts(matching: predicate, keysToFetch: keys)) ?? []
+            }
         }
         guard !Task.isCancelled else { return [] }
-        return Contact.sorted(found.prefix(Self.resultLimit).map(Self.contact(from:)))
+        return Signposts.interval("ContactsMap") {
+            Contact.sorted(found.prefix(Self.resultLimit).map(Self.contact(from:)))
+        }
+    }
+
+    /// The rest of one card (addresses, birthday, thumbnail), fetched only for the card being read.
+    @concurrent
+    func card(for id: String) async -> Contact? {
+        let found = Signposts.interval("ContactsCard") {
+            try? CNContactStore().unifiedContact(withIdentifier: id, keysToFetch: Self.keys())
+        }
+        return found.map(Self.contact(from:))
+    }
+
+    /// A row's avatar, fetched when the row scrolls into view rather than with the list.
+    @concurrent
+    func thumbnail(for id: String) async -> Data? {
+        let keys = [CNContactThumbnailImageDataKey] as [any CNKeyDescriptor]
+        return try? CNContactStore().unifiedContact(withIdentifier: id, keysToFetch: keys)
+            .thumbnailImageData
     }
 
     /// The full-size photo of one card, shrunk to what the detail pane can show; nil when it has none.
@@ -91,6 +114,15 @@ final class ContactStore {
         return CGImageDestinationFinalize(target) ? output as Data : nil
     }
 
+    /// What a row and the search need: no photo, no postal addresses, no birthday.
+    nonisolated private static func listKeys() -> [any CNKeyDescriptor] {
+        [
+            CNContactIdentifierKey, CNContactGivenNameKey, CNContactFamilyNameKey,
+            CNContactNicknameKey, CNContactOrganizationNameKey, CNContactJobTitleKey,
+            CNContactPhoneNumbersKey, CNContactEmailAddressesKey
+        ] as [any CNKeyDescriptor]
+    }
+
     nonisolated private static func keys() -> [any CNKeyDescriptor] {
         [
             CNContactIdentifierKey, CNContactGivenNameKey, CNContactFamilyNameKey,
@@ -107,10 +139,13 @@ final class ContactStore {
             jobTitle: contact.jobTitle,
             phones: contact.phoneNumbers.map { entry($0, value: $0.value.stringValue) },
             emails: contact.emailAddresses.map { entry($0, value: $0.value as String) },
-            addresses: contact.postalAddresses.map {
-                entry($0, value: CNPostalAddressFormatter.string(from: $0.value, style: .mailingAddress))
-            },
-            birthday: contact.birthday, thumbnail: contact.thumbnailImageData)
+            addresses: contact.isKeyAvailable(CNContactPostalAddressesKey)
+                ? contact.postalAddresses.map {
+                    entry($0, value: CNPostalAddressFormatter.string(from: $0.value, style: .mailingAddress))
+                } : [],
+            birthday: contact.isKeyAvailable(CNContactBirthdayKey) ? contact.birthday : nil,
+            thumbnail: contact.isKeyAvailable(CNContactThumbnailImageDataKey)
+                ? contact.thumbnailImageData : nil)
     }
 
     nonisolated private static func entry<Value>(_ item: CNLabeledValue<Value>, value: String) -> Contact.Entry {

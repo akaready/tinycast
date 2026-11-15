@@ -45,6 +45,19 @@ tokens were added for the monogram.
 grant needs the macOS prompt answered by the user. Unseen: focus-ring look, monogram contrast on real
 hues, photo load timing, the Maps/Messages/FaceTime hand-offs, → entering the card with the caret.
 
+### Fix pass — 2026-11-14 (hands-on test)
+
+**Causes:** (1) the focus border and the hover buttons / "Copied" label were inserted and removed in
+layout, so text moved; (2) every open refetched up to 200 cards with every key, thumbnails, postal
+addresses and birthdays included, and kept nothing between opens. **Changed:** a constant clear-stroke
+border and one fixed trailing slot that only fades (rows and quick buttons); a names-only list fetch,
+per-card details and per-row thumbnails loaded lazily, a warm names-only browse list kept across opens
+and discarded by `CNContactStoreDidChange`; signposts (`ContactsEnumerate`, `ContactsSearch`,
+`ContactsMap`, `ContactsCard`) in the subsystem `com.tinycast.perf`.
+**Verified:** tests, lint, purity grep, unsigned Debug build. **Not measured:** no address book or
+Contacts grant is available headlessly, so no before/after timings; the signposts are there for Instruments.
+**Left undone:** the 200 cap still takes the first 200 the framework returns, then sorts.
+
 ## Context
 
 Raycast has "Search Contacts". Upstream parked it (`docs/not-planned.md`, #1503), so this lives on
