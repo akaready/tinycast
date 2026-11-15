@@ -104,7 +104,7 @@ enum CommandID: String, CaseIterable, Sendable {
         case .createEvent: return "Create Event"
         case .copyMeetingLink: return "Copy Meeting Link"
         case .openInCalendar: return "Open in Calendar"
-        case .searchContacts: return "Search Contacts"
+        case .searchContacts: return "Contacts"
         case .showNotes: return "Show Notes"
         case .createNote: return "Create Note"
         case .searchNotes: return "Search Notes"
@@ -199,6 +199,14 @@ enum CommandID: String, CaseIterable, Sendable {
         case .translate: return .translate
         case .summarize: return .summarize
         default: return nil
+        }
+    }
+
+    /// Other ways to find the command, never ranked; the English name it had before is one.
+    var searchKeywords: [String] {
+        switch self {
+        case .searchContacts: ["Search Contacts", "people", "address book"]
+        default: []
         }
     }
 

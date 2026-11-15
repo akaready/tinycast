@@ -8,7 +8,7 @@ struct ContactsSettingsView: View {
         Form {
             Section {
                 Toggle(isOn: enabledBinding) {
-                    SettingsRowTitle(.contactsContacts, "Search contacts from Tinycast")
+                    SettingsRowTitle(.contactsContacts, "Contacts in Tinycast")
                     Text("Reads your contacts and never changes them.")
                 }
             }

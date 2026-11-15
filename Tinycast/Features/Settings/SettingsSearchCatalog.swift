@@ -609,10 +609,10 @@ enum SettingsSearchCatalog {
     private static let contacts: [SettingsSearchEntry] = [
         .init(
             pane: .contacts,
-            keywords: ["people", "address book", "phone", "email", "birthday"]),
+            keywords: ["people", "address book", "phone", "email", "birthday", "search contacts"]),
         .init(
-            .contactsContacts, "Search contacts from Tinycast",
-            keywords: ["people", "address book", "permission", "privacy"]),
+            .contactsContacts, "Contacts in Tinycast",
+            keywords: ["people", "address book", "permission", "privacy", "search contacts"]),
         .init(
             group: .contactsCommands, "Contacts commands",
             keywords: ["shortcut", "launcher", "search contacts", "alias"])

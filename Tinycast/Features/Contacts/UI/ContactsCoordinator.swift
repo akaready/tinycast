@@ -1,6 +1,6 @@
 import AppKit
 
-/// Owns the opt-in, the Search Contacts command and what a card's actions do.
+/// Owns the opt-in, the Contacts command and what a card's actions do.
 @MainActor
 @Observable
 final class ContactsCoordinator {

@@ -1,6 +1,6 @@
 # Contacts
 
-One launcher command, **Search Contacts**, that opens a palette screen over the Mac's address book:
+One launcher command, **Contacts** (internally `.searchContacts`, found by "search contacts" and "people" too), that opens a palette screen over the Mac's address book:
 a search field, a list, and a detail pane (photo, quick actions, phones, emails, addresses, birthday). Actions copy a
 value, write an email, message or FaceTime a number, or open the card in Contacts.app. Fork-only:
 upstream parked it ([not-planned.md](../not-planned.md)), so it lives on `local` and is never sent upstream.

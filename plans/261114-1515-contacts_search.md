@@ -74,6 +74,13 @@ skipped that edit), so they were unrun. They exist and pass now.
 list scrolling and keyboard navigation at thousands of rows, live reload after an edit in Contacts.
 **Left undone:** memory for a very large book is names, phones and emails for everyone, by design.
 
+### Rename — 2026-11-14
+
+The launcher command is now just "Contacts" (its old name, "people" and "address book" stay as
+`CommandID.searchKeywords`, so they still find it); the settings toggle reads "Contacts in Tinycast".
+Kept: `CommandID.searchContacts` and `command:search-contacts` (the id is persisted and used by deep
+links, and is not shown to the user); the "Search your contacts…" prompt and permission wording.
+
 ## Context
 
 Raycast has "Search Contacts". Upstream parked it (`docs/not-planned.md`, #1503), so this lives on
