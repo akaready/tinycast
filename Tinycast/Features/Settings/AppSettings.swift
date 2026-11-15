@@ -122,6 +122,11 @@ final class AppSettings {
         }
     }
 
+    /// Space right after an exact alias enters that entry; off, so a word equal to an alias types on.
+    var aliasSpaceEngages: Bool {
+        didSet { defaults.set(aliasSpaceEngages, forKey: Key.aliasSpaceEngages.rawValue) }
+    }
+
     /// How loose a fuzzy root-search hit may be and still show.
     var rootSearchSensitivity: SearchSensitivity {
         didSet {
@@ -775,6 +780,7 @@ final class AppSettings {
         launcherShowsSuggestions =
             defaults.object(forKey: Key.launcherShowsSuggestions.rawValue) == nil
             || defaults.bool(forKey: Key.launcherShowsSuggestions.rawValue)
+        aliasSpaceEngages = defaults.bool(forKey: Key.aliasSpaceEngages.rawValue)
         rootSearchSensitivity =
             defaults.string(forKey: Key.rootSearchSensitivity.rawValue)
             .flatMap(SearchSensitivity.init) ?? .default

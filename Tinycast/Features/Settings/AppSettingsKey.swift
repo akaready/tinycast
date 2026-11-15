@@ -27,6 +27,7 @@ enum AppSettingsKey: String, CaseIterable {
     case searchScopes = "launcherSearchScopes"
     case launcherShowsSuggestions = "launcherShowsSuggestions"
     case rootSearchSensitivity = "rootSearchSensitivity"
+    case aliasSpaceEngages = "aliasSpaceEngages"
     case openOnCursorScreen = "openOnCursorScreen"
     case autoSwitchInputSource = "autoSwitchInputSource"
     case paletteDraggable = "paletteDraggable"

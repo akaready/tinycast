@@ -177,6 +177,9 @@ enum SettingsSearchCatalog {
             .generalSearch, "Show suggestions",
             keywords: ["frequent", "recent", "recommended", "empty", "root search"]),
         .init(
+            .generalSearch, "Space after an alias opens it",
+            keywords: ["alias", "space", "shortcut", "argument", "root search"]),
+        .init(
             .generalSearch, "Search sensitivity",
             keywords: ["fuzzy", "strict", "loose", "matching", "typo", "root search"]),
         .init(

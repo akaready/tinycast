@@ -118583,6 +118583,58 @@
         }
       }
     },
+    "Space after an alias opens it" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Leertaste nach einem Alias öffnet ihn"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Espacio tras un alias lo abre"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Espace après un alias l’ouvre"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "エイリアスの後のスペースで開く"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "별칭 뒤 스페이스로 열기"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Espaço após um alias abre-o"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Пробел после псевдонима открывает его"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "别名后按空格键打开"
+          }
+        }
+      }
+    },
     "Spaces" : {
       "comment" : "Window command group: macOS Spaces (Mission Control desktops)",
       "localizations" : {
@@ -137565,6 +137617,58 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "输入以搜索文件和文件夹"
+          }
+        }
+      }
+    },
+    "Typing an alias and pressing Space enters a command that takes more input." : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Alias eingeben und die Leertaste drücken öffnet einen Befehl, der weitere Eingaben erwartet."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Escribir un alias y pulsar Espacio entra en un comando que admite más texto."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Saisir un alias puis appuyer sur Espace ouvre une commande qui attend une saisie."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "エイリアスを入力してスペースを押すと、追加の入力を受け付けるコマンドを開きます。"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "별칭을 입력하고 스페이스를 누르면 추가 입력을 받는 명령으로 들어갑니다."
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Digitar um alias e pressionar Espaço entra num comando que aceita mais texto."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ввод псевдонима и нажатие пробела открывает команду, которой нужен дополнительный ввод."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "输入别名后按空格键，即可进入需要继续输入内容的命令。"
           }
         }
       }
