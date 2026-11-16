@@ -1,6 +1,6 @@
 # Updates
 
-By default, Tinycast checks GitHub Releases once a day and offers the newest release for its own
+By default, Tinycast checks GitHub Releases twice a day and offers the newest release for its own
 channel in a pill in the palette, then installs it at the next relaunch or quit. There is no Sparkle
 and no appcast: the release feed the website already reads is the feed the app reads.
 
@@ -30,7 +30,7 @@ uninstall` and `brew list` keep working unchanged.
   checked — it resolves the ticket through `syspolicyd` or the network, so an offline Mac would
   refuse a bundle the signature already proves is ours.
 - **A build only ever updates within its own channel.** The channels are separate bundle ids installed
-  side by side; crossing would mean installing a different app. `com.tinycast.app.dev` never updates
+  side by side; crossing would mean installing a different app. `com.abueammar.tinycast.dev` never updates
   at all, and does not advertise the command.
 - **Nothing is installed unless every check passes.** Bundle id, version and signature are all checked
   on the expanded copy, and the running app survives any failure untouched.
@@ -80,11 +80,11 @@ the header row. It cannot reuse `ExtensionToastPill`, because extension views st
 
 `ReleaseChannel` is derived from the bundle id, and nothing else:
 
-| Bundle id               | Channel        | Takes       |
-| ----------------------- | -------------- | ----------- |
-| `com.tinycast.app`      | `.stable`      | releases    |
-| `com.tinycast.app.beta` | `.beta`        | prereleases |
-| anything else           | `.development` | nothing     |
+| Bundle id                     | Channel        | Takes       |
+| ----------------------------- | -------------- | ----------- |
+| `com.abueammar.tinycast`      | `.stable`      | releases    |
+| `com.abueammar.tinycast.beta` | `.beta`        | prereleases |
+| anything else                 | `.development` | nothing     |
 
 `AppVersion` parses `MAJOR.MINOR.PATCH` and `MAJOR.MINOR.PATCH-beta.N` with semver precedence: a
 prerelease sorts below the release it leads to, and `beta.10` above `beta.9`. Everything else parses
@@ -105,9 +105,11 @@ self-rescheduling pump, and one atomic JSON file.
 ```
 
 It holds `lastCheckedAt`, the newest release seen, and the version just installed. Freshness is
-measured from `lastCheckedAt`, so relaunching never re-asks GitHub; the interval is 24 h, dropping to
+measured from `lastCheckedAt`, so relaunching never re-asks GitHub; the interval is 12 h, dropping to
 2 h after a failed attempt, and the first check waits 30 s so it never lands in the login rush. The
-request carries a `User-Agent`, which the GitHub API rejects requests without.
+wait carries a 15 s tolerance so macOS can coalesce the wake with other timers. A check holds the
+~200 KB response only while parsing it, and the sleeping task holds nothing. The request carries a
+`User-Agent`, which the GitHub API rejects requests without.
 
 Disabling automatic checks takes effect immediately and survives relaunch. Turning them back on
 resumes the same schedule, with the startup delay and cached check time respected. Check for Updates
@@ -119,7 +121,13 @@ than what is running, unless an update is already downloading or waiting for qui
 update instead, since offering it again would discard the download or the staged copy.
 
 Check for Updates reports in a HUD: progress while it asks, then up to date or unreachable. When there
-is an update, it opens the palette so the pill shows.
+is an update, it opens the palette so the pill shows. It is reachable from the palette's app menu,
+the menu bar menu, the launcher, and Settings → About.
+
+Settings → About gives it a row of its own with a Check Now button and one status line: a local
+build says it does not update; otherwise the line reads checking, the newer version on offer, "Last
+checked" with a relative time that ticks once a minute, or not checked yet. It reads
+`UpdateCoordinator`'s status properties, never `stage`.
 
 ## Installing
 

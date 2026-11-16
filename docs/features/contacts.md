@@ -40,7 +40,7 @@ upstream parked it ([not-planned.md](../not-planned.md)), so it lives on `local`
   `CNContactStore`, so nothing needs cancelling.
 - **`Model/` is pure.** `Contact`, `ContactQuery`, `ContactIndex`, `ContactCard` and `ContactFormat` import only Foundation. Labels
   arrive already localised from the system; URL building, phone cleanup, address and birthday text
-  live in `ContactFormat` with a harness (`Tests/contacts-test.swift`).
+  live in `ContactFormat` with a harness (`Tests/ContactsTests.swift`).
 
 - **Photos come from two keys, and only the open card loads the big one.** The list fetches
   `thumbnailImageData` for every row; the detail pane asks `ContactStore.photo(for:maxPixel:)` for the

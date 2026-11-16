@@ -138,6 +138,6 @@ on the tap repo. Without the secret the step logs a warning and skips; the relea
 The `sed` is anchored to `^  version` / `^  sha256`, so a cask's two-space indent on those lines is
 load-bearing.
 
-Both stable casks install `Tinycast.app` under `com.tinycast.app`, so `tinycast-universal` declares
-`conflicts_with cask: "tinycast"`. `tinycast` requires `arch: :arm64`; `tinycast-universal` installs
-on any Mac.
+Both stable casks install `Tinycast.app` under `com.abueammar.tinycast`, so `tinycast-universal`
+declares `conflicts_with cask: "tinycast"`. `tinycast` requires `arch: :arm64`; `tinycast-universal`
+installs on any Mac.
